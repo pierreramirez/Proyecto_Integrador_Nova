@@ -1,0 +1,75 @@
+body {
+    background-color: #E6EEF5;
+}
+/* Sidebar */
+.nav {
+    background-color: #FAF3E0;
+}
+.nav-link {
+    color: #333333;
+    font-weight: 500;
+}
+.nav-link:hover {
+    background-color: #f5be0a;
+    color: #fff;
+    border-radius: 5px;
+}
+hr {
+    border-color: #ddd;
+}
+/* Banner superior */
+.row > .d-flex {
+    background-color: #fce8b1;
+    color: #333333;
+}
+.row > .d-flex h1 {
+    font-weight: bold;
+}
+/* Botones */
+.btn-success {
+    background-color: #f5be0a;
+    border: none;
+    color: #fff;
+}
+.btn-success:hover {
+    background-color: #e6a800;
+}
+.btn-warning {
+    background-color: #f5be0a;
+    border: none;
+    color: #fff;
+}
+.btn-warning:hover {
+    background-color: #e6a800;
+}
+.btn-danger {
+    background-color: #d9534f;
+    border: none;
+    color: #fff;
+}
+.btn-danger:hover {
+    background-color: #c9302c;
+}
+/* Tabla */
+.table-dark {
+    background-color: #333333;
+    color: #fff;
+}
+
+/* Modal */
+.modal-header {
+    background-color: #f5be0a;
+    color: #fff;
+}
+.modal-body {
+    background-color: #E6EEF5;
+}
+.form-label {
+    font-weight: 500;
+}
+/* Contenido principal */
+.main-content {
+    margin-left: 16.6667%; /* ancho de la sidebar (col-2 = 2/12 = 16.6667%) */
+    padding: 20px;
+    overflow-x: auto; /* permite scroll horizontal si el contenido es más ancho */
+}

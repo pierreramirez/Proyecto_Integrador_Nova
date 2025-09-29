@@ -9,11 +9,11 @@
         <hr>
         <div class="d-flex justify-content-between">
             <div>
-                <label for="fechaInicio">Fecha de inicio</label>
+                <label for="fechaInicio">Fecha de Inicio</label>
                 <input type="date" class="form-control" placeholder="Fecha de inicio">
             </div>
             <div>
-                <label for="fechaFin">Fecha de fin</label>
+                <label for="fechaFin">Fecha de Fin</label>
                 <input type="date" class="form-control" placeholder="Fecha de fin">
             </div>
         </div>

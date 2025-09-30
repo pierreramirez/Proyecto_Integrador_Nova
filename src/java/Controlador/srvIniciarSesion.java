@@ -10,7 +10,8 @@ import org.mindrot.jbcrypt.BCrypt;
 import javax.mail.MessagingException;
 
 /**
- * srvIniciarSesion - servlet para login, 2FA por email, registro y recuperación de contraseña.
+ * srvIniciarSesion - servlet para login, 2FA por email, registro y recuperación
+ * de contraseña.
  */
 public class srvIniciarSesion extends HttpServlet {
 
@@ -110,7 +111,8 @@ public class srvIniciarSesion extends HttpServlet {
     }
 
     /**
-     * Confirmar código 2FA: si OK -> guardar usuario en sesión y redirigir según rol.
+     * Confirmar código 2FA: si OK -> guardar usuario en sesión y redirigir
+     * según rol.
      */
     private void ConfirmarCodigo(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
@@ -125,10 +127,16 @@ public class srvIniciarSesion extends HttpServlet {
             Object oExpira = ses.getAttribute("codigoExpira");
             String codigoCorrecto = oCodigo != null ? oCodigo.toString() : null;
             long expira = 0L;
-            if (oExpira instanceof Long) expira = (Long) oExpira;
-            else if (oExpira instanceof Integer) expira = ((Integer) oExpira).longValue();
-            else if (oExpira instanceof String) {
-                try { expira = Long.parseLong((String)oExpira); } catch (Exception e) { expira = 0L; }
+            if (oExpira instanceof Long) {
+                expira = (Long) oExpira;
+            } else if (oExpira instanceof Integer) {
+                expira = ((Integer) oExpira).longValue();
+            } else if (oExpira instanceof String) {
+                try {
+                    expira = Long.parseLong((String) oExpira);
+                } catch (Exception e) {
+                    expira = 0L;
+                }
             }
 
             if (codigoCorrecto != null && expira > 0 && System.currentTimeMillis() <= expira && codigoCorrecto.equals(codigoEnviado)) {
@@ -187,7 +195,10 @@ public class srvIniciarSesion extends HttpServlet {
             }
 
             int dni = 0;
-            try { dni = Integer.parseInt(dniStr); } catch (NumberFormatException nfe) { /* deja 0 */ }
+            try {
+                dni = Integer.parseInt(dniStr);
+            } catch (NumberFormatException nfe) {
+                /* deja 0 */ }
 
             String hashed = BCrypt.hashpw(pass, BCrypt.gensalt(12));
 
@@ -198,6 +209,9 @@ public class srvIniciarSesion extends HttpServlet {
             u.setDni(dni);
             u.setEmail(email);
             u.setContra(hashed);
+
+            // Asignar rol por defecto: 3 = cliente (ajusta si tu sistema usa otros códigos)
+            u.setRol(3);
 
             DAOUsuarios dao = new DAOUsuarios();
             int creadorId = 1; // admin por defecto
@@ -220,7 +234,9 @@ public class srvIniciarSesion extends HttpServlet {
     private void CerrarSesion(HttpServletRequest request, HttpServletResponse response) {
         try {
             HttpSession sesion = request.getSession(false);
-            if (sesion != null) sesion.invalidate();
+            if (sesion != null) {
+                sesion.invalidate();
+            }
             response.sendRedirect("Vista/login.jsp");
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -228,7 +244,8 @@ public class srvIniciarSesion extends HttpServlet {
     }
 
     /**
-     * Solicitar recuperación: genera y envía código por email si existe el usuario.
+     * Solicitar recuperación: genera y envía código por email si existe el
+     * usuario.
      */
     private void SolicitarRecuperacion(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
@@ -285,15 +302,24 @@ public class srvIniciarSesion extends HttpServlet {
 
             String codigoCorrecto = oCodigo != null ? oCodigo.toString() : null;
             long expira = 0L;
-            if (oExpira instanceof Long) expira = (Long) oExpira;
-            else if (oExpira instanceof Integer) expira = oExpira != null ? ((Integer) oExpira).longValue() : 0L;
-            else if (oExpira instanceof String) {
-                try { expira = Long.parseLong((String)oExpira); } catch (Exception e) { expira = 0L; }
+            if (oExpira instanceof Long) {
+                expira = (Long) oExpira;
+            } else if (oExpira instanceof Integer) {
+                expira = oExpira != null ? ((Integer) oExpira).longValue() : 0L;
+            } else if (oExpira instanceof String) {
+                try {
+                    expira = Long.parseLong((String) oExpira);
+                } catch (Exception e) {
+                    expira = 0L;
+                }
             }
 
             int intentos = 0;
-            if (oIntentos instanceof Integer) intentos = (Integer) oIntentos;
-            else if (oIntentos instanceof Long) intentos = ((Long)oIntentos).intValue();
+            if (oIntentos instanceof Integer) {
+                intentos = (Integer) oIntentos;
+            } else if (oIntentos instanceof Long) {
+                intentos = ((Long) oIntentos).intValue();
+            }
 
             // control de expiración
             if (expira > 0 && System.currentTimeMillis() > expira) {
@@ -327,7 +353,8 @@ public class srvIniciarSesion extends HttpServlet {
     }
 
     /**
-     * Cambiar contraseña (desde cambiarPassword.jsp). Usa el email guardado en sesión por solicitarRecuperacion.
+     * Cambiar contraseña (desde cambiarPassword.jsp). Usa el email guardado en
+     * sesión por solicitarRecuperacion.
      */
     private void CambiarPassword(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
@@ -379,6 +406,7 @@ public class srvIniciarSesion extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         processRequest(request, response);
     }
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         processRequest(request, response);

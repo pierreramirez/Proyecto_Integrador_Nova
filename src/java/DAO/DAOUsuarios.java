@@ -23,10 +23,22 @@ public class DAOUsuarios extends Conexion implements CRUDUsuarios {
                 u.setDni(rs.getInt("dni"));
                 u.setEmail(rs.getString("email"));
                 // columna contraseña (hash)
-                try { u.setContra(rs.getString("contraseña")); } catch (Exception e) { /* ignore */ }
-                try { u.setEstado(rs.getInt("estado")); } catch (Exception e) { /* ignore */ }
-                try { u.setCreador(rs.getInt("creador")); } catch (Exception e) { /* ignore */ }
-                try { u.setRol(rs.getInt("rol_id")); } catch (Exception e) { /* ignore */ }
+                try {
+                    u.setContra(rs.getString("contraseña"));
+                } catch (Exception e) {
+                    /* ignore */ }
+                try {
+                    u.setEstado(rs.getInt("estado"));
+                } catch (Exception e) {
+                    /* ignore */ }
+                try {
+                    u.setCreador(rs.getInt("creador"));
+                } catch (Exception e) {
+                    /* ignore */ }
+                try {
+                    u.setRol(rs.getInt("rol_id"));
+                } catch (Exception e) {
+                    /* ignore */ }
                 lista.add(u);
             }
         } catch (Exception ex) {
@@ -36,8 +48,8 @@ public class DAOUsuarios extends Conexion implements CRUDUsuarios {
     }
 
     /**
-     * Valida sesión a partir de correo y contraseña en texto (contra).
-     * Devuelve DTOUsuario si coincide (hash), sino null.
+     * Valida sesión a partir de correo y contraseña en texto (contra). Devuelve
+     * DTOUsuario si coincide (hash), sino null.
      */
     @Override
     public DTOUsuario ValidarSesion(String correo, String contra) {
@@ -74,10 +86,22 @@ public class DAOUsuarios extends Conexion implements CRUDUsuarios {
                 usuario.setDni(rs.getInt("dni"));
                 usuario.setEmail(rs.getString("email"));
                 // contraseña (hash)
-                try { usuario.setContra(rs.getString("contraseña")); } catch (Exception e) { /* opcional */ }
-                try { usuario.setEstado(rs.getInt("estado")); } catch (Exception e) { /* opcional */ }
-                try { usuario.setCreador(rs.getInt("creador")); } catch (Exception e) { /* opcional */ }
-                try { usuario.setRol(rs.getInt("rol_id")); } catch (Exception e) { /* opcional */ }
+                try {
+                    usuario.setContra(rs.getString("contraseña"));
+                } catch (Exception e) {
+                    /* opcional */ }
+                try {
+                    usuario.setEstado(rs.getInt("estado"));
+                } catch (Exception e) {
+                    /* opcional */ }
+                try {
+                    usuario.setCreador(rs.getInt("creador"));
+                } catch (Exception e) {
+                    /* opcional */ }
+                try {
+                    usuario.setRol(rs.getInt("rol_id"));
+                } catch (Exception e) {
+                    /* opcional */ }
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -86,11 +110,14 @@ public class DAOUsuarios extends Conexion implements CRUDUsuarios {
     }
 
     /**
-     * Inserta usuario. La tabla puede tener valor por defecto para rol (por ejemplo 3=cliente).
-     * Si quieres insertar con rol explícito, crea una sobrecarga distinta.
+     * Inserta usuario. La tabla puede tener valor por defecto para rol (por
+     * ejemplo 3=cliente). Si quieres insertar con rol explícito, crea una
+     * sobrecarga distinta.
      */
     public boolean insertarUsuario(DTOUsuario u, int creadorId) {
-        String sql = "INSERT INTO usuario(appat,apmat,nombre,dni,email,contraseña,creador,fechaCreacion,estado) VALUES(?,?,?,?,?,?,?,NOW(),1)";
+        // incluimos rol_id en la inserción; escapamos el nombre de la columna contraseña con backticks por seguridad
+        String sql = "INSERT INTO usuario(appat, apmat, nombre, dni, email, `contraseña`, creador, rol_id, fechaCreacion, estado) "
+                + "VALUES(?,?,?,?,?,?,?,?,NOW(),1)";
         try {
             ps = super.con.prepareStatement(sql);
             ps.setString(1, u.getAppat());
@@ -100,10 +127,13 @@ public class DAOUsuarios extends Conexion implements CRUDUsuarios {
             ps.setString(5, u.getEmail());
             ps.setString(6, u.getContra()); // hashed
             ps.setInt(7, creadorId);
+            // si DTO trae rol, úsalo; si no, asigna 3 (cliente) por defecto
+            int rolParaInsert = (u.getRol() > 0) ? u.getRol() : 3;
+            ps.setInt(8, rolParaInsert);
             int r = ps.executeUpdate();
             return r > 0;
         } catch (Exception ex) {
-            ex.printStackTrace();
+            ex.printStackTrace(); // mira el stacktrace en la consola para conocer la causa exacta
         }
         return false;
     }

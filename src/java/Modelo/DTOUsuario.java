@@ -1,16 +1,19 @@
 package Modelo;
 
 public class DTOUsuario {
+
     private int idUsuario;
     private String appat;
     private String apmat;
     private String nombre;
     private int dni;
+    private int creador; // id del usuario que creó este usuario (admin)
     private String email;
     private String contra;
     private int estado;
 
-    public DTOUsuario() {}
+    public DTOUsuario() {
+    }
 
     public int getIdUsuario() {
         return idUsuario;
@@ -22,6 +25,14 @@ public class DTOUsuario {
 
     public String getAppat() {
         return appat;
+    }
+
+    public int getCreador() {
+        return creador;
+    }
+
+    public void setCreador(int creador) {
+        this.creador = creador;
     }
 
     public void setAppat(String appat) {

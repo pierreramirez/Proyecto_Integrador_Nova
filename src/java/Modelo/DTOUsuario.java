@@ -11,6 +11,7 @@ public class DTOUsuario {
     private String email;
     private String contra;
     private int estado;
+    private int rol; // 1=admin, 2=empleado, 3=cliente por convención
 
     public DTOUsuario() {
     }
@@ -25,14 +26,6 @@ public class DTOUsuario {
 
     public String getAppat() {
         return appat;
-    }
-
-    public int getCreador() {
-        return creador;
-    }
-
-    public void setCreador(int creador) {
-        this.creador = creador;
     }
 
     public void setAppat(String appat) {
@@ -63,6 +56,14 @@ public class DTOUsuario {
         this.dni = dni;
     }
 
+    public int getCreador() {
+        return creador;
+    }
+
+    public void setCreador(int creador) {
+        this.creador = creador;
+    }
+
     public String getEmail() {
         return email;
     }
@@ -85,5 +86,13 @@ public class DTOUsuario {
 
     public void setEstado(int estado) {
         this.estado = estado;
+    }
+
+    public int getRol() {
+        return rol;
+    }
+
+    public void setRol(int rol) {
+        this.rol = rol;
     }
 }

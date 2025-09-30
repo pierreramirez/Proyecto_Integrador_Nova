@@ -9,6 +9,7 @@
         <link rel="icon" href="../Imagenes/novas_logo.png">
         <title>Recuperar contraseña | NOVA'S TRAVELS</title>
         <style>
+            
             body {
                 background-color: #E6EEF5;
             }

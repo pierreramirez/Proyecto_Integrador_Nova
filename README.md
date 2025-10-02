@@ -7,7 +7,7 @@ El sistema busca optimizar los procesos de registro de rutas, buses, conductores
 selección de asientos y pagos electrónicos. El proyecto se desarrolló utilizando la metodología ágil SCRUM, organizando el trabajo en sprints con historias de usuario priorizadas en un Product Backlog.
 
 - Objetivo General
-Diseñar e implementar un sistema integral para la gestión de venta de tickets interprovinciales que unifique la administración de rutas, horarios, buses, asientos, clientes y pagos, mejorando la eficiencia operativa, el control administrativo y la experiencia del usuario.
+  -  Diseñar e implementar un sistema integral para la gestión de venta de tickets interprovinciales que unifique la administración de rutas, horarios, buses, asientos, clientes y pagos, mejorando la eficiencia operativa, el control administrativo y la experiencia del usuario.
 
 - Objetivos Específicos
 

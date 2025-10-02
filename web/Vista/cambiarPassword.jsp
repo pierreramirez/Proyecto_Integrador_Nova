@@ -2,27 +2,44 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-        <link rel="icon" href="../Imagenes/novas_logo.png">
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
         <title>Nueva contraseña | NOVA'S TRAVELS</title>
+
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <link rel="icon" href="../Imagenes/novas_logo.png">
+
         <style>
             body {
                 background-color: #E6EEF5;
             }
             .login-box {
                 background-color: #FAF3E0;
-                padding:36px;
-                border-radius:15px;
-                box-shadow:0 4px 12px rgba(0,0,0,0.12);
+                padding: 32px;
+                border-radius: 12px;
+                box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+                width: 100%;
+                max-width: 720px;
             }
             .login-logo {
-                width:500px;
+                width:100%;
                 height:auto;
+                max-width:420px;
+                display:block;
             }
-            .btn-primary-custom {
+            @media (max-width:768px){
+                .login-logo{
+                    max-width:220px;
+                }
+            }
+            @media (max-width:420px){
+                .login-logo{
+                    max-width:160px;
+                }
+            }
+            .btn-primary-custom{
                 background:#f5be0a;
                 border:none;
                 color:#fff;
@@ -31,25 +48,50 @@
             .btn-primary-custom:hover{
                 background:#e6a800;
             }
+            .center-vertical{
+                min-height:100vh;
+            }
+            @media (max-width:576px){
+                .center-vertical{
+                    padding-top:2rem;
+                    padding-bottom:2rem;
+                    min-height:auto;
+                }
+            }
         </style>
     </head>
     <body>
-        <div class="d-flex justify-content-between row align-items-center mt-5" style="width:100%;">
-            <div class="col d-flex justify-content-center align-items-center">
-                <img src="../Imagenes/novas_logo.png" class="login-logo" alt="NOVA'S TRAVELS Logo">
-            </div>
-            <div class="container login-box col-4 p-5 rounded me-5 shadow">
-                <h3 class="text-center mb-3">Nueva contraseña</h3>
-                <p>Ingresa tu nueva contraseña.</p>
-                <form method="post" action="../srvIniciarSesion?accion=cambiarPassword" id="formPass" novalidate>
-                    <label class="form-label">Contraseña</label>
-                    <input name="password1" type="password" minlength="6" class="form-control mb-2" required>
-                    <label class="form-label">Confirmar contraseña</label>
-                    <input name="password2" type="password" minlength="6" class="form-control mb-3" required>
-                    <button class="btn btn-primary-custom w-100" type="submit">Cambiar contraseña</button>
-                </form>
-                <div class="mt-3">
-                    <a href="login.jsp">Volver al inicio</a>
+        <div class="container-fluid">
+            <div class="row align-items-center justify-content-center center-vertical gx-4">
+                <!-- Logo -->
+                <div class="col-12 col-md-5 d-flex justify-content-center mb-4 mb-md-0 order-1">
+                    <img src="../Imagenes/novas_logo.png" class="login-logo" alt="NOVA'S TRAVELS Logo" onerror="this.src='../Imagenes/novas_logo.png'">
+                </div>
+
+                <!-- Form -->
+                <div class="col-12 col-md-7 d-flex justify-content-center order-2">
+                    <div class="login-box">
+                        <h3 class="text-center mb-3">Nueva contraseña</h3>
+                        <p>Ingresa tu nueva contraseña.</p>
+
+                        <form method="post" action="../srvIniciarSesion?accion=cambiarPassword" id="formPass" novalidate>
+                            <div class="mb-3">
+                                <label class="form-label">Contraseña</label>
+                                <input name="password1" type="password" minlength="6" class="form-control" autocomplete="new-password" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Confirmar contraseña</label>
+                                <input name="password2" type="password" minlength="6" class="form-control" autocomplete="new-password" required>
+                            </div>
+                            <div class="d-grid mb-2">
+                                <button class="btn btn-primary-custom w-100" type="submit">Cambiar contraseña</button>
+                            </div>
+                        </form>
+
+                        <div class="mt-2">
+                            <a href="login.jsp">Volver al inicio</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

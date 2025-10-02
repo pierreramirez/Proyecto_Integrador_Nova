@@ -2,27 +2,44 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-        <link rel="icon" href="../Imagenes/novas_logo.png">
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
         <title>Verificar código | NOVA'S TRAVELS</title>
+
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <link rel="icon" href="../Imagenes/novas_logo.png">
+
         <style>
             body {
-                background-color: #E6EEF5;
+                background-color:#E6EEF5;
             }
-            .login-box {
-                background-color: #FAF3E0;
-                padding:36px;
-                border-radius:15px;
-                box-shadow:0 4px 12px rgba(0,0,0,0.12);
+            .login-box{
+                background:#FAF3E0;
+                padding:32px;
+                border-radius:12px;
+                box-shadow:0 6px 18px rgba(0,0,0,0.12);
+                width:100%;
+                max-width:720px;
             }
-            .login-logo {
-                width:500px;
+            .login-logo{
+                width:100%;
                 height:auto;
+                max-width:420px;
+                display:block;
             }
-            .btn-primary-custom {
+            @media (max-width:768px){
+                .login-logo{
+                    max-width:220px;
+                }
+            }
+            @media (max-width:420px){
+                .login-logo{
+                    max-width:160px;
+                }
+            }
+            .btn-primary-custom{
                 background:#f5be0a;
                 border:none;
                 color:#fff;
@@ -31,27 +48,46 @@
             .btn-primary-custom:hover{
                 background:#e6a800;
             }
+            .center-vertical{
+                min-height:100vh;
+            }
+            @media (max-width:576px){
+                .center-vertical{
+                    padding-top:2rem;
+                    min-height:auto;
+                }
+            }
         </style>
     </head>
     <body>
-        <div class="d-flex justify-content-between row align-items-center mt-5" style="width:100%;">
-            <div class="col d-flex justify-content-center align-items-center">
-                <img src="../Imagenes/novas_logo.png" class="login-logo" alt="NOVA'S TRAVELS Logo">
-            </div>
-            <div class="container login-box col-4 p-5 rounded me-5 shadow">
-                <h3 class="text-center mb-3">Verificar código</h3>
-                <p>Hemos enviado un código de 6 dígitos a tu correo.</p>
-                <form method="post" action="../srvIniciarSesion?accion=verificarRecuperacion" id="formCod" novalidate>
-                    <label class="form-label">Código (6 dígitos)</label>
-                    <input name="txtCodigoRecup" type="text" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" class="form-control mb-3" required autofocus>
-                    <button class="btn btn-primary-custom w-100" type="submit">Verificar</button>
-                </form>
-                <div class="mt-3 d-flex justify-content-between">
-                    <a href="recuperar.jsp">Repetir correo</a>
-                    <form method="post" action="../srvIniciarSesion?accion=solicitarRecuperacion" style="display:inline;">
-                        <!-- reenviar: re-lanza la solicitud usando el email en session -->
-                        <button type="submit" class="btn btn-link p-0">Reenviar código</button>
-                    </form>
+        <div class="container-fluid">
+            <div class="row align-items-center justify-content-center center-vertical gx-4">
+                <div class="col-12 col-md-5 d-flex justify-content-center mb-4 mb-md-0">
+                    <img src="../Imagenes/novas_logo.png" class="login-logo" alt="logo">
+                </div>
+
+                <div class="col-12 col-md-7 d-flex justify-content-center">
+                    <div class="login-box">
+                        <h3 class="text-center mb-3">Verificar código</h3>
+                        <p>Hemos enviado un código de 6 dígitos a tu correo.</p>
+
+                        <form method="post" action="../srvIniciarSesion?accion=verificarRecuperacion" id="formCod" novalidate>
+                            <div class="mb-3">
+                                <label class="form-label">Código (6 dígitos)</label>
+                                <input name="txtCodigoRecup" type="text" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" class="form-control" required autofocus>
+                            </div>
+                            <div class="d-grid mb-2">
+                                <button class="btn btn-primary-custom w-100" type="submit">Verificar</button>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <a href="recuperar.jsp">Repetir correo</a>
+                                <form method="post" action="../srvIniciarSesion?accion=solicitarRecuperacion" style="display:inline;">
+                                    <button type="submit" class="btn btn-link p-0">Reenviar código</button>
+                                </form>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -80,4 +116,3 @@
         </script>
     </body>
 </html>
-

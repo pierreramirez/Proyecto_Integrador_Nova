@@ -1,6 +1,5 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%
-    // Evitar cache (seguridad)
     response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     response.setHeader("Pragma", "no-cache");
     response.setDateHeader("Expires", 0);
@@ -8,29 +7,49 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-
-        <link rel="icon" href="../Imagenes/novas_logo.png">
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Login | NOVA'S TRAVELS</title>
+
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <link rel="icon" href="../Imagenes/novas_logo.png">
 
         <style>
             body {
                 background-color: #E6EEF5;
             }
+
+            /* Caja del formulario */
             .login-box {
                 background-color: #FAF3E0;
-                padding: 40px;
-                border-radius: 15px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                padding: 28px;
+                border-radius: 12px;
+                box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+                width: 100%;
+                max-width: 660px;
             }
+
+            /* Logo: controlamos tamaños en distintos breakpoints */
             .login-logo {
-                width: 500px;
+                width: 100%;
                 height: auto;
+                display: block;
+                max-width: 620px;     /* escritorio/tablet */
             }
+            @media (max-width: 768px) {
+                .login-logo {
+                    max-width: 220px;
+                }   /* tablet/móvil grande */
+            }
+            @media (max-width: 420px) {
+                .login-logo {
+                    max-width: 160px;
+                }   /* móviles pequeños: evita que sea gigante */
+            }
+
+            /* Pequeños ajustes visuales */
             .btn-login {
                 background-color: #f5be0a;
                 border: none;
@@ -40,75 +59,75 @@
             .btn-login:hover {
                 background-color: #e6a800;
             }
-            .form-label {
-                font-weight: 500;
+
+            /* Aseguramos buena separación en vh-100 (centrado vertical) pero con padding extra arriba en móvil */
+            .center-vertical {
+                min-height: 100vh;
             }
-            .small-link {
-                font-size: 0.9rem;
+            @media (max-width: 576px) {
+                .center-vertical {
+                    padding-top: 3rem;
+                    padding-bottom: 3rem;
+                    min-height: auto;
+                }
             }
         </style>
     </head>
     <body>
-        <div class="d-flex justify-content-between row align-items-center mt-5" style="width: 100%;">
-            <!-- Logo a la izquierda -->
-            <div class="col d-flex justify-content-center align-items-center">
-                <img src="../Imagenes/novas_logo.png" class="login-logo" alt="NOVA'S TRAVELS Logo">
-            </div>
+        <div class="container">
+            <div class="row align-items-center justify-content-center center-vertical gx-4">
+                <!-- Logo arriba en móviles (order-1), en escritorio ocupa la columna izquierda (order-md-1) -->
+                <div class="col-12 col-md-5 d-flex justify-content-center mb-4 mb-md-0 order-1">
+                    <img src="../Imagenes/novas_logo.png" alt="NOVA'S TRAVELS" class="login-logo" onerror="this.src='../Imagenes/novas_logo.png'">
+                </div>
 
-            <!-- Formulario a la derecha -->
-            <div class="container login-box col-4 p-5 rounded me-5 shadow">
-                <h1 class="text-center mb-4">Login</h1>
+                <!-- Formulario: en móvil aparece debajo (order-2), en md+ derecha (order-md-2) -->
+                <div class="col-12 col-md-7 d-flex justify-content-center order-2">       
+                    <div class="login-box">
+                        <h3 class="text-center mb-3">Iniciar sesión</h3>
 
-                <form method="post" action="../srvIniciarSesion?accion=verificar" id="loginForm">
-                    <div class="row mb-3">
-                        <div>
-                            <label for="username" class="form-label">Correo:</label>
-                            <input type="email" id="username" name="txtCorreo" class="form-control" required>
-                        </div>
-                    </div>
-                    <div class="row mb-4">
-                        <div>
-                            <label for="password" class="form-label">Password:</label>
-                            <input type="password" id="password" name="txtPassword" class="form-control" required>
-                        </div>
-                    </div>
+                        <form method="post" action="../srvIniciarSesion?accion=verificar" id="loginForm" novalidate>
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Correo</label>
+                                <input type="email" id="username" name="txtCorreo" class="form-control" autocomplete="username" required>
+                            </div>
 
-                    <div class="row mb-3">
-                        <button class="btn btn-login btn-lg w-100" type="submit">Inicia Sesión</button>
-                    </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Contraseña</label>
+                                <input type="password" id="password" name="txtPassword" class="form-control" autocomplete="current-password" required>
+                            </div>
 
-                    <!-- Si ya existe código2FA en session mostramos enlace para ir a verificar -->
-                    <%
-                        String codigo = (String) session.getAttribute("codigo2FA");
-                        Long expira = (Long) session.getAttribute("codigoExpira");
-                        if (codigo != null && expira != null) {
-                            long remSeg = (expira - System.currentTimeMillis()) / 1000;
-                            if (remSeg < 0)
-                                remSeg = 0;
-                    %>
-                    <div class="row mb-3">
-                        <div class="text-center">
-                            <a href="verificarCodigo.jsp" class="btn btn-outline-primary w-100">
-                                Ingresar código (pendiente) — tiempo restante: <%= remSeg%> s
-                            </a>
-                        </div>
-                    </div>
-                    <%
-                        }
-                    %>
+                            <div class="d-grid mb-3">
+                                <button class="btn btn-login btn-lg" type="submit">Inicia Sesión</button>
+                            </div>
 
-                    <div class="row">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <a href="registro.jsp" class="small-link">¿No tienes cuenta? Registrarse</a>
-                            <a href="recuperar.jsp" class="small-link">Olvidé mi contraseña</a>
-                        </div>
+                            <% String codigo = (String) session.getAttribute("codigo2FA");
+                                Long expira = (Long) session.getAttribute("codigoExpira");
+                                if (codigo != null && expira != null) {
+                                    long remSeg = (expira - System.currentTimeMillis()) / 1000;
+                                    if (remSeg < 0)
+                                        remSeg = 0;
+                            %>
+                            <div class="mb-3">
+                                <a href="verificarCodigo.jsp" class="btn btn-outline-primary w-100">Ingresar código — tiempo restante: <%= remSeg%> s</a>
+                            </div>
+                            <% }%>
+
+                            <div class="d-flex justify-content-between small">
+                                <a href="registro.jsp">¿No tienes cuenta? Registrarse</a>
+                                <a href="recuperar.jsp">Olvidé mi contraseña</a>
+                            </div>
+                        </form>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
 
+        <!-- Scripts -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+        <!-- Reutilizo tu código de SweetAlert para mensajes -->
         <script>
-            // Leer parámetros de la URL y mostrar alertas con SweetAlert2
             (function () {
                 const params = new URLSearchParams(window.location.search);
                 const err = params.get('error');
@@ -144,4 +163,3 @@
         </script>
     </body>
 </html>
-

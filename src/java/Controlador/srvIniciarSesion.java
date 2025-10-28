@@ -228,20 +228,7 @@ public class srvIniciarSesion extends HttpServlet {
         }
     }
 
-    /**
-     * Cerrar sesión.
-     */
-    private void CerrarSesion(HttpServletRequest request, HttpServletResponse response) {
-        try {
-            HttpSession sesion = request.getSession(false);
-            if (sesion != null) {
-                sesion.invalidate();
-            }
-            response.sendRedirect("Vista/login.jsp");
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
+    
 
     /**
      * Solicitar recuperación: genera y envía código por email si existe el

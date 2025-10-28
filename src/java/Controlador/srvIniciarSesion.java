@@ -8,12 +8,19 @@ import Modelo.DTOUsuario;
 import Util.EmailUtil;
 import org.mindrot.jbcrypt.BCrypt;
 import javax.mail.MessagingException;
-import javax.mail.MessagingException;
-import org.mindrot.jbcrypt.BCrypt;
 
+/**
+ * srvIniciarSesion - servlet para login, 2FA por email, registro y recuperación
+ * de contraseña.
+ */
 public class srvIniciarSesion extends HttpServlet {
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // Forzar UTF-8
+        request.setCharacterEncoding("UTF-8");
+        response.setContentType("text/html; charset=UTF-8");
+        response.setCharacterEncoding("UTF-8");
+
         String accion = request.getParameter("accion");
         try {
             if (accion != null) {
@@ -39,7 +46,6 @@ public class srvIniciarSesion extends HttpServlet {
                     case "cambiarPassword":
                         CambiarPassword(request, response);
                         break;
-
                     default:
                         response.sendRedirect("Vista/login.jsp");
                 }
@@ -52,21 +58,37 @@ public class srvIniciarSesion extends HttpServlet {
         }
     }
 
+    /**
+     * Verificar credenciales: si OK -> generar código 2FA y enviar por email.
+     */
     private void VerificarLogin(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
             String correo = request.getParameter("txtCorreo");
             String contra = request.getParameter("txtPassword");
 
+            if (correo == null || correo.trim().isEmpty() || contra == null) {
+                response.sendRedirect("Vista/login.jsp?error=cred");
+                return;
+            }
+
             DAOUsuarios dao = new DAOUsuarios();
             DTOUsuario user = dao.getUserByEmail(correo);
 
-            if (user != null && BCrypt.checkpw(contra, user.getContra())) {
-                // generar código 6 dígitos
+            if (user == null) {
+                System.out.println("DEBUG: getUserByEmail devolvió NULL para email=" + correo);
+                response.sendRedirect("Vista/login.jsp?error=cred");
+                return;
+            } else {
+                System.out.println("DEBUG: usuario encontrado email=" + user.getEmail() + " rol=" + user.getRol() + " hashExists=" + (user.getContra() != null));
+            }
+
+            // comprobar hash con BCrypt
+            if (user.getContra() != null && BCrypt.checkpw(contra, user.getContra())) {
                 String codigo = String.format("%06d", (int) (Math.random() * 900000) + 100000);
                 HttpSession ses = request.getSession();
                 ses.setAttribute("codigo2FA", codigo);
                 ses.setAttribute("userTemp", user);
-                long expiracion = System.currentTimeMillis() + (5 * 60 * 1000); // 5 min
+                long expiracion = System.currentTimeMillis() + (5 * 60 * 1000); // 5 minutos
                 ses.setAttribute("codigoExpira", expiracion);
 
                 try {
@@ -79,6 +101,7 @@ public class srvIniciarSesion extends HttpServlet {
 
                 response.sendRedirect("Vista/verificarCodigo.jsp");
             } else {
+                System.out.println("DEBUG: BCrypt.checkpw returned FALSE para email=" + correo);
                 response.sendRedirect("Vista/login.jsp?error=cred");
             }
         } catch (Exception ex) {
@@ -87,6 +110,10 @@ public class srvIniciarSesion extends HttpServlet {
         }
     }
 
+    /**
+     * Confirmar código 2FA: si OK -> guardar usuario en sesión y redirigir
+     * según rol.
+     */
     private void ConfirmarCodigo(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
             String codigoEnviado = request.getParameter("txtCodigo");
@@ -96,16 +123,51 @@ public class srvIniciarSesion extends HttpServlet {
                 return;
             }
 
-            String codigoCorrecto = (String) ses.getAttribute("codigo2FA");
-            Long expira = (Long) ses.getAttribute("codigoExpira");
+            Object oCodigo = ses.getAttribute("codigo2FA");
+            Object oExpira = ses.getAttribute("codigoExpira");
+            String codigoCorrecto = oCodigo != null ? oCodigo.toString() : null;
+            long expira = 0L;
+            if (oExpira instanceof Long) {
+                expira = (Long) oExpira;
+            } else if (oExpira instanceof Integer) {
+                expira = ((Integer) oExpira).longValue();
+            } else if (oExpira instanceof String) {
+                try {
+                    expira = Long.parseLong((String) oExpira);
+                } catch (Exception e) {
+                    expira = 0L;
+                }
+            }
 
-            if (codigoCorrecto != null && expira != null && System.currentTimeMillis() <= expira && codigoCorrecto.equals(codigoEnviado)) {
+            if (codigoCorrecto != null && expira > 0 && System.currentTimeMillis() <= expira && codigoCorrecto.equals(codigoEnviado)) {
                 DTOUsuario user = (DTOUsuario) ses.getAttribute("userTemp");
+                if (user == null) {
+                    response.sendRedirect("Vista/login.jsp");
+                    return;
+                }
+
+                System.out.println("DEBUG: Usuario logueado email=" + user.getEmail() + " rol=" + user.getRol());
+
                 ses.setAttribute("user", user);
+                ses.setMaxInactiveInterval(30 * 60); // 30 minutos
+
+                // limpiar 2FA
                 ses.removeAttribute("codigo2FA");
                 ses.removeAttribute("codigoExpira");
                 ses.removeAttribute("userTemp");
-                response.sendRedirect("Vista/index.jsp");
+
+                // redirigir según rol
+                int rol = user.getRol();
+                if (rol == 1) {
+                    response.sendRedirect("Vista/Administrador/index.jsp");
+                } else if (rol == 2) {
+                    response.sendRedirect("Vista/Empleado/index.jsp");
+                } else if (rol == 3) {
+                    response.sendRedirect("Vista/index.jsp");
+                } else {
+                    System.out.println("DEBUG: rol inesperado (" + rol + "), redirigiendo a login");
+                    response.sendRedirect("Vista/login.jsp?error=rol");
+                }
             } else {
                 response.sendRedirect("Vista/verificarCodigo.jsp?error=cod");
             }
@@ -115,14 +177,28 @@ public class srvIniciarSesion extends HttpServlet {
         }
     }
 
+    /**
+     * Registrar nuevo usuario (básico).
+     */
     private void Registrar(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
             String appat = request.getParameter("appat");
             String apmat = request.getParameter("apmat");
             String nombre = request.getParameter("nombre");
-            int dni = Integer.parseInt(request.getParameter("dni"));
+            String dniStr = request.getParameter("dni");
             String email = request.getParameter("email");
             String pass = request.getParameter("password");
+
+            if (appat == null || nombre == null || dniStr == null || email == null || pass == null) {
+                response.sendRedirect("Vista/registro.jsp?error=missing");
+                return;
+            }
+
+            int dni = 0;
+            try {
+                dni = Integer.parseInt(dniStr);
+            } catch (NumberFormatException nfe) {
+                /* deja 0 */ }
 
             String hashed = BCrypt.hashpw(pass, BCrypt.gensalt(12));
 
@@ -133,6 +209,9 @@ public class srvIniciarSesion extends HttpServlet {
             u.setDni(dni);
             u.setEmail(email);
             u.setContra(hashed);
+
+            // Asignar rol por defecto: 3 = cliente (ajusta si tu sistema usa otros códigos)
+            u.setRol(3);
 
             DAOUsuarios dao = new DAOUsuarios();
             int creadorId = 1; // admin por defecto
@@ -149,6 +228,9 @@ public class srvIniciarSesion extends HttpServlet {
         }
     }
 
+    /**
+     * Cerrar sesión.
+     */
     private void CerrarSesion(HttpServletRequest request, HttpServletResponse response) {
         try {
             HttpSession sesion = request.getSession(false);
@@ -160,31 +242,35 @@ public class srvIniciarSesion extends HttpServlet {
             ex.printStackTrace();
         }
     }
-    // 1) Solicitar recuperación: genera código y envía correo si existe el usuario
 
+    /**
+     * Solicitar recuperación: genera y envía código por email si existe el
+     * usuario.
+     */
     private void SolicitarRecuperacion(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
             String correo = request.getParameter("txtCorreoRecup");
+            if (correo == null || correo.trim().isEmpty()) {
+                response.sendRedirect("Vista/recuperar.jsp?error=missing");
+                return;
+            }
+
             DAOUsuarios dao = new DAOUsuarios();
             DTOUsuario user = dao.getUserByEmail(correo);
             if (user == null) {
-                // no existe
                 response.sendRedirect("Vista/recuperar.jsp?error=noexist");
                 return;
             }
 
-            // generar código
             String codigo = String.format("%06d", (int) (Math.random() * 900000) + 100000);
             HttpSession ses = request.getSession();
             ses.setAttribute("recupEmail", correo);
             ses.setAttribute("recupCodigo", codigo);
-            ses.setAttribute("recupExpira", System.currentTimeMillis() + (10 * 60 * 1000)); // 10 min validez
+            ses.setAttribute("recupExpira", System.currentTimeMillis() + (10 * 60 * 1000)); // 10 minutos
             ses.setAttribute("recupIntentos", 0);
 
-            // enviar correo
             try {
-                
-                Util.EmailUtil.enviarCodigoVerificacion(correo, codigo);
+                EmailUtil.enviarCodigoVerificacion(correo, codigo);
             } catch (MessagingException me) {
                 me.printStackTrace();
                 response.sendRedirect("Vista/recuperar.jsp?error=mail");
@@ -198,7 +284,9 @@ public class srvIniciarSesion extends HttpServlet {
         }
     }
 
-// 2) Verificar código de recuperación
+    /**
+     * Verificar código de recuperación: si OK -> ir a cambiarPassword.jsp.
+     */
     private void VerificarRecuperacion(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
             String codigoIngresado = request.getParameter("txtCodigoRecup");
@@ -208,31 +296,51 @@ public class srvIniciarSesion extends HttpServlet {
                 return;
             }
 
-            String codigoCorrecto = (String) ses.getAttribute("recupCodigo");
-            Long expira = (Long) ses.getAttribute("recupExpira");
-            Integer intentos = (Integer) ses.getAttribute("recupIntentos");
-            if (intentos == null) {
-                intentos = 0;
+            Object oCodigo = ses.getAttribute("recupCodigo");
+            Object oExpira = ses.getAttribute("recupExpira");
+            Object oIntentos = ses.getAttribute("recupIntentos");
+
+            String codigoCorrecto = oCodigo != null ? oCodigo.toString() : null;
+            long expira = 0L;
+            if (oExpira instanceof Long) {
+                expira = (Long) oExpira;
+            } else if (oExpira instanceof Integer) {
+                expira = oExpira != null ? ((Integer) oExpira).longValue() : 0L;
+            } else if (oExpira instanceof String) {
+                try {
+                    expira = Long.parseLong((String) oExpira);
+                } catch (Exception e) {
+                    expira = 0L;
+                }
             }
 
-            // controlar intentos
-            if (System.currentTimeMillis() > expira) {
+            int intentos = 0;
+            if (oIntentos instanceof Integer) {
+                intentos = (Integer) oIntentos;
+            } else if (oIntentos instanceof Long) {
+                intentos = ((Long) oIntentos).intValue();
+            }
+
+            // control de expiración
+            if (expira > 0 && System.currentTimeMillis() > expira) {
                 ses.removeAttribute("recupCodigo");
                 ses.removeAttribute("recupExpira");
+                ses.removeAttribute("recupIntentos");
                 response.sendRedirect("Vista/recuperar.jsp?error=exp");
                 return;
             }
 
             if (codigoCorrecto != null && codigoCorrecto.equals(codigoIngresado)) {
-                // ok -> permitir cambiar password
+                // permitir cambiar password
                 response.sendRedirect("Vista/cambiarPassword.jsp");
             } else {
                 intentos++;
                 ses.setAttribute("recupIntentos", intentos);
                 if (intentos >= 3) {
-                    // bloquear intento: limpiar y forzar re-solicitud
+                    // bloquear y forzar re-solicitud
                     ses.removeAttribute("recupCodigo");
                     ses.removeAttribute("recupExpira");
+                    ses.removeAttribute("recupIntentos");
                     response.sendRedirect("Vista/recuperar.jsp?error=blocked");
                 } else {
                     response.sendRedirect("Vista/recuperarCodigo.jsp?error=cod");
@@ -244,16 +352,19 @@ public class srvIniciarSesion extends HttpServlet {
         }
     }
 
-// 3) Cambiar contraseña (desde cambiarPassword.jsp)
+    /**
+     * Cambiar contraseña (desde cambiarPassword.jsp). Usa el email guardado en
+     * sesión por solicitarRecuperacion.
+     */
     private void CambiarPassword(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
             String pass1 = request.getParameter("password1");
             String pass2 = request.getParameter("password2");
+
             if (pass1 == null || pass2 == null || !pass1.equals(pass2)) {
                 response.sendRedirect("Vista/cambiarPassword.jsp?error=match");
                 return;
             }
-            // validar mínimos si deseas (longitud)
             if (pass1.length() < 6) {
                 response.sendRedirect("Vista/cambiarPassword.jsp?error=short");
                 return;
@@ -264,19 +375,18 @@ public class srvIniciarSesion extends HttpServlet {
                 response.sendRedirect("Vista/recuperar.jsp");
                 return;
             }
-            String correo = (String) ses.getAttribute("recupEmail");
+            Object oCorreo = ses.getAttribute("recupEmail");
+            String correo = oCorreo != null ? oCorreo.toString() : null;
             if (correo == null) {
                 response.sendRedirect("Vista/recuperar.jsp");
                 return;
             }
 
-            // hashear
             String hashed = BCrypt.hashpw(pass1, BCrypt.gensalt(12));
-
             DAOUsuarios dao = new DAOUsuarios();
             boolean ok = dao.actualizarContrasena(correo, hashed);
             if (ok) {
-                // limpiar atributos de sesión relacionados
+                // limpiar atributos relacionados con la recuperación
                 ses.removeAttribute("recupCodigo");
                 ses.removeAttribute("recupExpira");
                 ses.removeAttribute("recupEmail");
@@ -291,6 +401,7 @@ public class srvIniciarSesion extends HttpServlet {
         }
     }
 
+    // doGet / doPost
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         processRequest(request, response);
@@ -301,5 +412,3 @@ public class srvIniciarSesion extends HttpServlet {
         processRequest(request, response);
     }
 }
-
-

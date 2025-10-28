@@ -3,20 +3,17 @@
 
 <div class="container-fluid">
   <div class="row g-0">
-    <!-- SIDEBAR ESTÁTICO (solo md+) -->
+
     <aside class="col-md-2 d-none d-md-block sidebar p-3 bg-white shadow">
       <div class="text-center mb-3">
         <img src="${pageContext.request.contextPath}/Imagenes/user-default.png"
              onerror="this.src='https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg'"
              class="rounded-circle avatar-small img-fluid" alt="avatar">
       </div>
-
       <h5 class="text-center small mb-3">
         <c:out value="${sessionScope.user.appat}"/> <c:out value="${sessionScope.user.apmat}"/><br/>
         <strong><c:out value="${sessionScope.user.nombre}"/></strong>
       </h5>
-
-      <hr>
 
       <ul class="nav flex-column">
         <c:if test="${sessionScope.user.rol == 1}">
@@ -48,11 +45,26 @@
         </c:if>
 
         <c:if test="${sessionScope.user.rol == 2}">
-          <li class="nav-item mb-2">
-            <a class="nav-link" href="${pageContext.request.contextPath}/ClienteServlet?action=agregarForm">
-              <i class='bx bx-user me-2'></i> Registrar Cliente
-            </a>
-          </li>
+            <li class="nav-item mb-2">
+              <a class="nav-link" href="${pageContext.request.contextPath}/BusServlet?action=listar">
+                <i class='bx bxs-bus me-2'></i> Registrar Bus
+              </a>
+            </li>
+            <li class="nav-item mb-2">
+              <a class="nav-link" href="${pageContext.request.contextPath}/RutaServlet?action=listar">
+                <i class='bx bxs-map me-2'></i> Programar Ruta
+              </a>
+            </li>
+            <li class="nav-item mb-2">
+              <a class="nav-link" href="${pageContext.request.contextPath}/ClienteServlet?action=listar">
+                <i class='bx bx-user me-2'></i> Gestionar Clientes
+              </a>
+            </li>
+            <li class="nav-item mb-2">
+              <a class="nav-link" href="${pageContext.request.contextPath}/Vista/AdministrarPasajes.jsp">
+                <i class='bx bxs-coupon me-2'></i> Pasajes
+              </a>
+            </li>
         </c:if>
 
         <c:if test="${sessionScope.user.rol == 3}">
@@ -64,14 +76,6 @@
           <li class="nav-item mb-2">
             <a class="nav-link" href="${pageContext.request.contextPath}/pasaje/listar.jsp">
               <i class='bx bxs-coupon me-2'></i> Mis Pasajes
-            </a>
-          </li>
-        </c:if>
-
-        <c:if test="${sessionScope.user.rol == 1 || sessionScope.user.rol == 2}">
-          <li class="nav-item mb-2">
-            <a class="nav-link" href="${pageContext.request.contextPath}/ClienteServlet?action=buscar">
-              <i class='bx bx-search me-2'></i> Buscar Cliente
             </a>
           </li>
         </c:if>
@@ -134,8 +138,23 @@
 
           <c:if test="${sessionScope.user.rol == 2}">
             <li class="nav-item mb-2">
-              <a class="nav-link" href="${pageContext.request.contextPath}/ClienteServlet?action=agregarForm">
-                <i class='bx bx-user me-2'></i> Registrar Cliente
+              <a class="nav-link" href="${pageContext.request.contextPath}/BusServlet?action=listar">
+                <i class='bx bxs-bus me-2'></i> Registrar Bus
+              </a>
+            </li>
+            <li class="nav-item mb-2">
+              <a class="nav-link" href="${pageContext.request.contextPath}/RutaServlet?action=listar">
+                <i class='bx bxs-map me-2'></i> Programar Ruta
+              </a>
+            </li>
+            <li class="nav-item mb-2">
+              <a class="nav-link" href="${pageContext.request.contextPath}/ClienteServlet?action=listar">
+                <i class='bx bx-user me-2'></i> Gestionar Clientes
+              </a>
+            </li>
+            <li class="nav-item mb-2">
+              <a class="nav-link" href="${pageContext.request.contextPath}/Vista/AdministrarPasajes.jsp">
+                <i class='bx bxs-coupon me-2'></i> Pasajes
               </a>
             </li>
           </c:if>
@@ -152,14 +171,6 @@
               </a>
             </li>
           </c:if>
-
-          <c:if test="${sessionScope.user.rol == 1 || sessionScope.user.rol == 2}">
-            <li class="nav-item mb-2">
-              <a class="nav-link" href="${pageContext.request.contextPath}/ClienteServlet?action=buscar">
-                <i class='bx bx-search me-2'></i> Buscar Cliente
-              </a>
-            </li>
-          </c:if>
         </ul>
 
         <hr>
@@ -171,6 +182,5 @@
       </div>
     </div>
 
-    <!-- CONTENIDO PRINCIPAL -->
     <main class="col-12 col-md-10 p-3 main-content">
-      <!-- El JSP que incluyas (index.jsp u otro) colocará su contenido aquí -->
+ 

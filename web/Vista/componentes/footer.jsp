@@ -4,7 +4,6 @@
 </div> <!-- cierra row -->
 </div> <!-- cierra container-fluid -->
 
-<!-- Footer visible -->
 <footer class="site-footer mt-4 text-center">
     <hr/>
     <p>&copy; 2025 NOVA'S TRAVELS - Todos los derechos reservados</p>

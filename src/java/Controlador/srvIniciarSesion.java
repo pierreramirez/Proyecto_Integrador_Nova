@@ -400,6 +400,7 @@ public class srvIniciarSesion extends HttpServlet {
             response.sendRedirect("Vista/cambiarPassword.jsp?error=ex");
         }
     }
+
     // doGet / doPost
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

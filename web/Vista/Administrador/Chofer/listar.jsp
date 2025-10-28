@@ -1,287 +1,256 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Administrar Choferes</title>
+<!-- includes: header y menu (fragmentos sin directivas 'page') -->
+<jsp:include page="/Vista/componentes/header.jsp" />
+<jsp:include page="/Vista/componentes/menu.jsp" />
 
-        <!-- Bootstrap -->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-        <!-- DataTables -->
-        <link href="https://cdn.datatables.net/2.0.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-        <script src="https://cdn.datatables.net/2.0.7/js/dataTables.min.js"></script>
-        <script src="https://cdn.datatables.net/2.0.7/js/dataTables.bootstrap5.min.js"></script>
-
-        <!-- Iconos -->
-        <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/estilos.css">
-    </head>
-    <body>
-
-        <div class="d-flex align-items-start">
-            <!-- Sidebar -->
-            <div class="nav flex-column p-3 col-2 d-flex justify-content-between min-vh-100 shadow" 
-                 style="position: fixed;">
-                <div>
-                    <div class="d-flex justify-content-center align-items-center my-4">
-                        <img src="https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg" 
-                             class="rounded-circle" alt="..." width="100" height="100">
-                    </div>
-                    <div>
-                        <h4 class="text-center">
-                            <c:out value="${sessionScope.user.appat} ${sessionScope.user.apmat}, ${sessionScope.user.nombre}"/>
-                        </h4>
-                    </div>
-                </div>
-                <hr>
-
-                <ul class="nav flex-column">
-                    <li class="nav-item mb-3">
-                        <a class="nav-link" href="${pageContext.request.contextPath}/BusServlet?action=listar"><i class='bx bxs-bus me-2'></i>Registrar Bus</a>
-                    </li>
-                    <li class="nav-item mb-3">
-                        <a class="nav-link" href="${pageContext.request.contextPath}/ChoferServlet?action=listar"><i class='bx bxs-user-account me-2'></i>Registrar Choferes</a>
-                    </li>
-                    <li class="nav-item mb-3">
-                        <a class="nav-link" href="${pageContext.request.contextPath}/viaje/listar.jsp"><i class='bx bxs-map me-2'></i>Programar Ruta</a>
-                    </li>
-                    <li class="nav-item mb-3">
-                        <a class="nav-link" href="${pageContext.request.contextPath}/ClienteServlet?action=listar"><i class='bx bx-user me-2'></i>Registrar Cliente</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="${pageContext.request.contextPath}/pasaje/listar.jsp"><i class='bx bxs-coupon me-2'></i>Pasajes</a>
-                    </li>
-                </ul>
-                <hr>
-                <div class="text-center">
-                    <a href="${pageContext.request.contextPath}/srvIniciarSesion?accion=cerrar" class="text-dark" style="text-decoration: none;">
-                        <i class='bx bx-log-out me-2'></i>Cerrar Sesión
-                    </a>
-                </div>
-            </div>
-
-            <!-- Espaciador -->
-            <div class="col-2"></div>
-
-            <!-- Contenido -->
-            <div class="col-10">
-                <div class="row">
-                    <div class="d-flex align-items-center justify-content-center p-2 flex-fill">
-                        <img src="${pageContext.request.contextPath}/Imagenes/novas_logo.png" class="img-fluid me-3" alt="..." width="100px">
-                        <h1 class="m-0">NOVA'S TRAVELS</h1>
-                    </div>
-                </div>
-
-                <div class="container mt-4">
-                    <h2 class="mb-4">Administrar Choferes</h2>
-                    <button type="button" class="btn btn-success mb-3" id="btnAgregar">➕ Nuevo Chofer</button>
-                    <div class="table-responsive">
-                        <table id="tablaChoferes" class="table table-striped table-bordered">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Apellido Paterno</th>
-                                    <th>Apellido Materno</th>
-                                    <th>Nombre</th>
-                                    <th>DNI</th>
-                                    <th>Licencia</th>
-                                    <th>Fecha Contratación</th>
-                                    <th>Fecha Vencimiento Licencia</th>
-                                    <th>Teléfono</th>
-                                    <th>Disponibilidad</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <c:forEach var="c" items="${choferes}">
-                                    <tr>
-                                        <td>${c.id}</td>
-                                        <td>${c.appat}</td>
-                                        <td>${c.apmat}</td>
-                                        <td>${c.nombre}</td>
-                                        <td>${c.dni}</td>
-                                        <td>${c.licenciaConducir}</td>
-                                        <td>${c.fechaContratacion}</td>
-                                        <td>${c.fechaVencimientoLicencia}</td>
-                                        <td>${c.telefono}</td>
-                                        <td>
-                                            <c:choose>
-                                                <c:when test="${c.disponibilidad == 1}">
-                                                    <span style="color:green;">●</span>
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <span style="color:red;">●</span>
-                                                </c:otherwise>
-                                            </c:choose>
-                                        </td>
-                                        <td>
-                                            <c:choose>
-                                                <c:when test="${c.estado == 1}">Activo</c:when>
-                                                <c:otherwise>Inactivo</c:otherwise>
-                                            </c:choose>
-                                        </td>
-                                        <td>
-                                            <button type="button" class="btn btn-warning btn-sm btnEditar"
-                                                    data-id="${c.id}"
-                                                    data-appat="${c.appat}"
-                                                    data-apmat="${c.apmat}"
-                                                    data-nombre="${c.nombre}"
-                                                    data-dni="${c.dni}"
-                                                    data-licencia="${c.licenciaConducir}"
-                                                    data-fechacon="${c.fechaContratacion}"
-                                                    data-fechaven="${c.fechaVencimientoLicencia}"
-                                                    data-telefono="${c.telefono}"
-                                                    data-disponibilidad="${c.disponibilidad}"
-                                                    data-estado="${c.estado}">✏️ Editar</button>
-                                            <a href="${pageContext.request.contextPath}/ChoferServlet?action=eliminar&id=${c.id}" class="btn btn-danger btn-sm"
-                                               onclick="return confirm('¿Seguro que deseas eliminar este chofer?');">🗑️ Eliminar</a>
-                                        </td>
-                                    </tr>
-                                </c:forEach>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+<!-- CONTENIDO: Listar Choferes -->
+<div class="container-fluid" style="margin-top:18px;">
+    <div class="card m-3 p-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="mb-0">Administrar Choferes</h2>
+            <button type="button" id="btnAgregar" class="btn btn-success">➕ Nuevo Chofer</button>
         </div>
 
-        <!-- Modal Agregar / Editar Chofer -->
-        <div class="modal fade" id="modalChofer" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modalTitle">Editar Chofer</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="formChofer" method="post" action="${pageContext.request.contextPath}/ChoferServlet">
-                            <input type="hidden" name="action" id="formAction" value="update">
-                            <input type="hidden" name="idChofer" id="editId">
+        <div class="table-responsive">
+            <table id="tablaChoferes" class="table table-striped table-bordered" style="width:100%;">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width:60px;">ID</th>
+                        <th style="width:160px;"><span class="th-wrap">Apellido<br>Paterno</span></th>
+                        <th style="width:160px;"><span class="th-wrap">Apellido<br>Materno</span></th>
+                        <th style="width:140px;"><span class="th-wrap">Nombre</span></th>
+                        <th style="width:110px;"><span class="th-wrap">DNI</span></th>
+                        <th style="width:130px;"><span class="th-wrap">Licencia</span></th>
+                        <th style="width:130px;"><span class="th-wrap">Fecha de<br>Contratación</span></th>
+                        <th style="width:130px;"><span class="th-wrap">Fecha Venc.<br>Licencia</span></th>
+                        <th style="width:120px;"><span class="th-wrap">Teléfono</span></th>
+                        <th style="width:120px;"><span class="th-wrap">Disponibilidad</span></th>
+                        <th style="width:100px;"><span class="th-wrap">Estado</span></th>
+                        <th style="width:120px;"><span class="th-wrap">Acciones</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <c:forEach var="c" items="${choferes}">
+                        <tr>
+                            <td class="ellipsisCell text-center">${c.id}</td>
+                            <td class="ellipsisCell">${c.appat}</td>
+                            <td class="ellipsisCell">${c.apmat}</td>
+                            <td class="ellipsisCell">${c.nombre}</td>
+                            <td class="ellipsisCell text-center">${c.dni}</td>
+                            <td class="ellipsisCell">${c.licenciaConducir}</td>
+                            <td class="ellipsisCell">${c.fechaContratacion}</td>
+                            <td class="ellipsisCell">${c.fechaVencimientoLicencia}</td>
+                            <td class="ellipsisCell text-center">${c.telefono}</td>
+                            <td class="ellipsisCell text-center">
+                                <c:choose>
+                                    <c:when test="${c.disponibilidad == 1}">Disponible</c:when>
+                                    <c:otherwise>No</c:otherwise>
+                                </c:choose>
+                            </td>
+                            <td class="ellipsisCell text-center">
+                                <c:choose>
+                                    <c:when test="${c.estado == 1}">Activo</c:when>
+                                    <c:otherwise>Inactivo</c:otherwise>
+                                </c:choose>
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-warning btn-sm btnEditar"
+                                        data-id="${c.id}" title="Editar">✏️</button>
+                                <a href="${pageContext.request.contextPath}/ChoferServlet?action=eliminar&id=${c.id}"
+                                   class="btn btn-danger btn-sm"
+                                   onclick="return confirm('¿Seguro que deseas eliminar este chofer?');" title="Eliminar">🗑️</a>
+                            </td>
+                        </tr>
+                    </c:forEach>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Apellido Paterno</label>
-                                    <input type="text" class="form-control" name="appat" id="editAppat" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Apellido Materno</label>
-                                    <input type="text" class="form-control" name="apmat" id="editApmat" required>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Nombre</label>
-                                    <input type="text" class="form-control" name="nombre" id="editNombre" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">DNI</label>
-                                    <input type="number" class="form-control" name="dni" id="editDni" required>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Licencia Conducir</label>
-                                    <input type="text" class="form-control" name="licenciaConducir" id="editLicencia" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Teléfono</label>
-                                    <input type="number" class="form-control" name="telefono" id="editTelefono" required>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Fecha Contratación</label>
-                                    <input type="date" class="form-control" name="fechaContratacion" id="editFechaCon" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Fecha Vencimiento Licencia</label>
-                                    <input type="date" class="form-control" name="fechaVencimientoLicencia" id="editFechaVen" required>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Disponibilidad</label>
-                                    <select class="form-select" name="disponibilidad" id="editDisponibilidad" required>
-                                        <option value="1">Disponible</option>
-                                        <option value="0">No Disponible</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Estado</label>
-                                    <select class="form-select" name="estado" id="editEstado" required>
-                                        <option value="1">Activo</option>
-                                        <option value="0">Inactivo</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="modal-footer">
-                                <button type="submit" class="btn btn-warning" id="btnSubmit">Guardar</button>
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+<!-- Modal con iframe: carga agregar/editar sin duplicar estilos -->
+<div class="modal fade" id="modalForm" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl" style="max-width:1100px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="modalTitle" class="modal-title">Formulario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="height:82vh; padding:0;">
+                <iframe id="modalFrame" src="" frameborder="0" style="width:100%; height:100%;"></iframe>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Bootstrap JS -->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- include footer -->
+<jsp:include page="/Vista/componentes/footer.jsp" />
 
-        <script>
-                                                   $(document).ready(function () {
-                                                       $('#tablaChoferes').DataTable({
-                                                           responsive: true,
-                                                           language: {
-                                                               search: "🔍 Buscar:",
-                                                               lengthMenu: "Mostrar _MENU_ registros por página",
-                                                               info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
-                                                               paginate: {
-                                                                   first: "Primero",
-                                                                   last: "Último",
-                                                                   next: "Siguiente",
-                                                                   previous: "Anterior"
-                                                               },
-                                                               zeroRecords: "No se encontraron registros"
-                                                           }});
+<!-- ===== Estilos y comportamiento ===== -->
+<style>
+    /* header wrap (permitir que headers se partan en 2 líneas) */
+    .th-wrap {
+        display:block;
+        white-space: normal;
+        text-align:center;
+    }
 
-                                                       var modalChofer = new bootstrap.Modal(document.getElementById('modalChofer'));
+    /* Celdas con truncado ... para que el cuerpo no aumente de alto */
+    #tablaChoferes {
+        table-layout: fixed !important;
+        width:100% !important;
+    }
+    #tablaChoferes th, #tablaChoferes td {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap; /* NO querías salto en celdas */
+        vertical-align: middle;
+        box-sizing: border-box;
+    }
 
-                                                       // Botón Agregar
-                                                       $('#btnAgregar').click(function () {
-                                                           $('#modalTitle').text('Agregar Chofer');
-                                                           $('#formAction').val('add');
-                                                           $('#formChofer')[0].reset();
-                                                           modalChofer.show();
-                                                       });
+    /* Asegura que la cabeza generada por DataTables use fixed layout también */
+    .dataTables_scrollHeadInner table {
+        table-layout: fixed !important;
+        width:100% !important;
+    }
 
-                                                       // Botón Editar
-                                                       $('.btnEditar').click(function () {
-                                                           $('#modalTitle').text('Editar Chofer');
-                                                           $('#formAction').val('update');
-                                                           $('#editId').val($(this).data('id'));
-                                                           $('#editAppat').val($(this).data('appat'));
-                                                           $('#editApmat').val($(this).data('apmat'));
-                                                           $('#editNombre').val($(this).data('nombre'));
-                                                           $('#editDni').val($(this).data('dni'));
-                                                           $('#editLicencia').val($(this).data('licencia'));
-                                                           $('#editTelefono').val($(this).data('telefono'));
-                                                           $('#editFechaCon').val($(this).data('fechacon'));
-                                                           $('#editFechaVen').val($(this).data('fechaven'));
-                                                           $('#editDisponibilidad').val($(this).data('disponibilidad'));
-                                                           $('#editEstado').val($(this).data('estado'));
-                                                           modalChofer.show();
-                                                       });
-                                                   });
-        </script>
+    /* Ajustes para el contenedor scroll */
+    .dataTables_scrollBody {
+        max-height: 55vh !important;
+    }
+</style>
 
-    </body>
-</html>
+<!-- ===== Scripts (asegúrate de no duplicar en header/footer) ===== -->
+<link href="https://cdn.datatables.net/2.0.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdn.datatables.net/2.0.7/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.0.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+                                       $(document).ready(function () {
+                                           // Inicializa DataTable con scroll (barra lateral en el body)
+                                           var table = $('#tablaChoferes').DataTable({
+                                               responsive: false,
+                                               scrollY: '55vh', // altura del body; cambia si quieres menos/más
+                                               scrollX: true,
+                                               scrollCollapse: true,
+                                               paging: true,
+                                               pageLength: 10,
+                                               lengthMenu: [10, 25, 50],
+                                               autoWidth: false,
+                                               columnDefs: [
+                                                   {orderable: false, targets: -1, width: '120px'}, // Acciones
+                                                   {targets: 0, width: '60px', className: 'text-center'}, // ID
+                                                   {targets: 1, width: '160px'}, // Apellido Paterno
+                                                   {targets: 2, width: '160px'}, // Apellido Materno
+                                                   {targets: 3, width: '140px'}, // Nombre
+                                                   {targets: 4, width: '110px', className: 'text-center'}, // DNI
+                                                   {targets: 5, width: '130px'}, // Licencia
+                                                   {targets: 6, width: '130px'}, // Fecha Contratación
+                                                   {targets: 7, width: '130px'}, // Fecha Venc.
+                                                   {targets: 8, width: '120px', className: 'text-center'}, // Teléfono
+                                                   {targets: 9, width: '120px', className: 'text-center'}, // Disponibilidad
+                                                   {targets: 10, width: '100px', className: 'text-center'} // Estado
+                                               ],
+                                               language: {
+                                                   search: "🔍 Buscar:",
+                                                   lengthMenu: "Mostrar _MENU_ registros por página",
+                                                   info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                                                   paginate: {first: "Primero", last: "Último", next: "Siguiente", previous: "Anterior"},
+                                                   zeroRecords: "No se encontraron registros"
+                                               },
+                                               drawCallback: function () {
+                                                   // reaplicar tooltips y sincronizar ancho después de cada dibujo
+                                                   applyTooltips();
+                                                   setTimeout(syncHeadWidths, 50);
+                                               }
+                                           });
+
+                                           // forzar ajuste inicial y sincronización
+                                           table.columns.adjust();
+                                           setTimeout(syncHeadWidths, 200);
+
+                                           // recalcula en resize (debounced)
+                                           var resizeTimer;
+                                           $(window).on('resize', function () {
+                                               clearTimeout(resizeTimer);
+                                               resizeTimer = setTimeout(function () {
+                                                   table.columns.adjust();
+                                                   syncHeadWidths();
+                                               }, 150);
+                                           });
+
+                                           // Modal iframe
+                                           var modalEl = document.getElementById('modalForm');
+                                           var bsModal = new bootstrap.Modal(modalEl);
+
+                                           $('#btnAgregar').on('click', function () {
+                                               var url = '${pageContext.request.contextPath}/ChoferServlet?action=agregar';
+                                               $('#modalTitle').text('Agregar Chofer');
+                                               $('#modalFrame').attr('src', url);
+                                               bsModal.show();
+                                           });
+
+                                           $(document).on('click', '.btnEditar', function () {
+                                               var id = $(this).data('id');
+                                               var url = '${pageContext.request.contextPath}/ChoferServlet?action=editar&id=' + id;
+                                               $('#modalTitle').text('Editar Chofer #' + id);
+                                               $('#modalFrame').attr('src', url);
+                                               bsModal.show();
+                                           });
+
+                                           $('#modalForm').on('hidden.bs.modal', function () {
+                                               $('#modalFrame').attr('src', '');
+                                               setTimeout(function () {
+                                                   table.columns.adjust();
+                                                   syncHeadWidths();
+                                               }, 150);
+                                           });
+
+                                           // Sincroniza anchos entre head generado por datatables y body
+                                           function syncHeadWidths() {
+                                               try {
+                                                   var $headTable = $('.dataTables_scrollHeadInner table');
+                                                   var $bodyTable = $('.dataTables_scrollBody table');
+
+                                                   if ($headTable.length && $bodyTable.length) {
+                                                       // dar al head el ancho total real del body
+                                                       var bodyW = $bodyTable.outerWidth();
+                                                       $headTable.css('width', bodyW + 'px');
+
+                                                       // sincronizar columna a columna con el primer TR del body
+                                                       var $firstRowTds = $bodyTable.find('tr:eq(0) td');
+                                                       if ($firstRowTds.length) {
+                                                           $firstRowTds.each(function (idx) {
+                                                               var w = $(this).outerWidth();
+                                                               $headTable.find('th').eq(idx).css('width', w + 'px');
+                                                           });
+                                                       }
+                                                   }
+                                               } catch (e) {
+                                                   table.columns.adjust();
+                                               }
+                                           }
+
+                                           // Tooltip: agrega title con texto completo a celdas truncadas
+                                           function applyTooltips() {
+                                               $('#tablaChoferes tbody td.ellipsisCell').each(function () {
+                                                   var $td = $(this);
+                                                   var text = $td.text().trim();
+                                                   if (text.length > 0) {
+                                                       $td.attr('title', text);
+                                                   } else {
+                                                       $td.removeAttr('title');
+                                                   }
+                                               });
+                                           }
+
+                                           // ejecutar por primera vez
+                                           applyTooltips();
+
+                                       });
+</script>

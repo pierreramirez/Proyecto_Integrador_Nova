@@ -1,147 +1,125 @@
 package DAO;
 
-import Modelo.DTORuta;
-import Interfaces.CRUDRutas;
 import Persistencia.Conexion;
+import Modelo.DTORuta;
+
 import java.sql.*;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.List;
 
-public class DAORutas extends Conexion implements CRUDRutas {
+public class DAORutas {
 
-    public DAORutas() {
-        super();
-    }
-
-    @Override
-    public LinkedList<DTORuta> ListarRutas() {
-        LinkedList<DTORuta> lista = new LinkedList<>();
-        String consulta = "SELECT * FROM ruta_viaje WHERE estado = 1";
-        try {
-            ps = con.prepareStatement(consulta);
-            rs = ps.executeQuery();
+    // Listar todas las rutas (usado por tu servlet List)
+    public List<DTORuta> ListarRutas() throws SQLException {
+        List<DTORuta> lista = new ArrayList<>();
+        String sql = "SELECT * FROM ruta_viaje ORDER BY fechaSalida, horaSalida, idViaje";
+        try (Connection c = new Conexion().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                DTORuta ruta = new DTORuta();
-                ruta.setIdViaje(rs.getInt("idViaje"));
-                ruta.setIdBus(rs.getInt("idBus"));
-                ruta.setIdChofer(rs.getInt("idChofer"));
-                ruta.setFechaSalida(rs.getDate("fechaSalida"));
-                ruta.setHoraSalida(rs.getTime("horaSalida"));
-                ruta.setFechaLlegada(rs.getDate("fechaLlegada"));
-                ruta.setHoraLlegada(rs.getTime("horaLlegada"));
-                ruta.setOrigen(rs.getInt("origen"));
-                ruta.setDestino(rs.getInt("destino"));
-                ruta.setPrecio(rs.getBigDecimal("precio")); // BigDecimal correcto
-                ruta.setBoletosRestantes(rs.getInt("boletosRestantes"));
-                ruta.setCreador(rs.getInt("creador"));
-                ruta.setFechaCreacion(rs.getTimestamp("fechaCreacion")); // Timestamp
-                ruta.setEstado(rs.getInt("estado"));
-                lista.add(ruta);
+                lista.add(mapRowToRuta(rs));
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
         return lista;
     }
 
-    @Override
-    public DTORuta ObtenerRuta(int id) {
-        DTORuta ruta = null;
-        String consulta = "SELECT * FROM ruta_viaje WHERE idViaje = ?";
-        try {
-            ps = con.prepareStatement(consulta);
-            ps.setInt(1, id);
-            rs = ps.executeQuery();
-            if (rs.next()) {
-                ruta = new DTORuta();
-                ruta.setIdViaje(rs.getInt("idViaje"));
-                ruta.setIdBus(rs.getInt("idBus"));
-                ruta.setIdChofer(rs.getInt("idChofer"));
-                ruta.setFechaSalida(rs.getDate("fechaSalida"));
-                ruta.setHoraSalida(rs.getTime("horaSalida"));
-                ruta.setFechaLlegada(rs.getDate("fechaLlegada"));
-                ruta.setHoraLlegada(rs.getTime("horaLlegada"));
-                ruta.setOrigen(rs.getInt("origen"));
-                ruta.setDestino(rs.getInt("destino"));
-                ruta.setPrecio(rs.getBigDecimal("precio"));
-                ruta.setBoletosRestantes(rs.getInt("boletosRestantes"));
-                ruta.setCreador(rs.getInt("creador"));
-                ruta.setFechaCreacion(rs.getTimestamp("fechaCreacion"));
-                ruta.setEstado(rs.getInt("estado"));
+    // Obtener ruta por id (ObtenerRuta)
+    public DTORuta ObtenerRuta(int idViaje) throws SQLException {
+        String sql = "SELECT * FROM ruta_viaje WHERE idViaje = ?";
+        try (Connection c = new Conexion().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, idViaje);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapRowToRuta(rs);
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
-        return ruta;
+        return null;
     }
 
-    @Override
-    public boolean AgregarRuta(DTORuta ruta) {
-        String consulta = "INSERT INTO ruta_viaje "
-                + "(idBus, idChofer, fechaSalida, horaSalida, origen, fechaLlegada, horaLlegada, destino, precio, boletosRestantes, creador, fechaCreacion, estado) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)";
-        try {
-            ps = con.prepareStatement(consulta);
-            ps.setInt(1, ruta.getIdBus());
-            ps.setInt(2, ruta.getIdChofer());
-            ps.setDate(3, ruta.getFechaSalida());
-            ps.setTime(4, ruta.getHoraSalida());
-            ps.setInt(5, ruta.getOrigen());
-            ps.setDate(6, ruta.getFechaLlegada());
-            ps.setTime(7, ruta.getHoraLlegada());
-            ps.setInt(8, ruta.getDestino());
-            if (ruta.getPrecio() != null) {
-                ps.setBigDecimal(9, ruta.getPrecio());
-            } else {
-                ps.setNull(9, Types.DECIMAL);
+    // Agregar Ruta (AgregarRuta) - retorna id generado o -1
+    public int AgregarRuta(DTORuta r) throws SQLException {
+        String sql = "INSERT INTO ruta_viaje (idBus, idChofer, fechaSalida, horaSalida, fechaLlegada, horaLlegada, origen, destino, precio, boletosRestantes, creador, fechaCreacion, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)";
+        try (Connection c = new Conexion().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, r.getIdBus());
+            ps.setInt(2, r.getIdChofer());
+            ps.setDate(3, r.getFechaSalida());
+            ps.setTime(4, r.getHoraSalida());
+            ps.setDate(5, r.getFechaLlegada());
+            ps.setTime(6, r.getHoraLlegada());
+            ps.setInt(7, r.getOrigen());
+            ps.setInt(8, r.getDestino());
+            ps.setBigDecimal(9, r.getPrecio());
+            ps.setInt(10, r.getBoletosRestantes());
+            ps.setInt(11, r.getCreador());
+            ps.setInt(12, r.getEstado());
+            int affected = ps.executeUpdate();
+            if (affected == 0) return -1;
+            try (ResultSet gk = ps.getGeneratedKeys()) {
+                if (gk.next()) return gk.getInt(1);
             }
-            ps.setInt(10, ruta.getBoletosRestantes());
-            ps.setInt(11, ruta.getCreador());
-            ps.setInt(12, ruta.getEstado());
-            return ps.executeUpdate() > 0;
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
-        return false;
+        return -1;
     }
 
-    @Override
-    public boolean EditarRuta(DTORuta ruta) {
-        String consulta = "UPDATE ruta_viaje SET idBus=?, idChofer=?, fechaSalida=?, horaSalida=?, origen=?, fechaLlegada=?, horaLlegada=?, destino=?, precio=?, boletosRestantes=?, estado=? WHERE idViaje=?";
-        try {
-            ps = con.prepareStatement(consulta);
-            ps.setInt(1, ruta.getIdBus());
-            ps.setInt(2, ruta.getIdChofer());
-            ps.setDate(3, ruta.getFechaSalida());
-            ps.setTime(4, ruta.getHoraSalida());
-            ps.setInt(5, ruta.getOrigen());
-            ps.setDate(6, ruta.getFechaLlegada());
-            ps.setTime(7, ruta.getHoraLlegada());
-            ps.setInt(8, ruta.getDestino());
-            if (ruta.getPrecio() != null) {
-                ps.setBigDecimal(9, ruta.getPrecio());
-            } else {
-                ps.setNull(9, Types.DECIMAL);
-            }
-            ps.setInt(10, ruta.getBoletosRestantes());
-            ps.setInt(11, ruta.getEstado());
-            ps.setInt(12, ruta.getIdViaje());
-            return ps.executeUpdate() > 0;
-        } catch (Exception ex) {
-            ex.printStackTrace();
+    // Editar Ruta (EditarRuta)
+    public boolean EditarRuta(DTORuta r) throws SQLException {
+        String sql = "UPDATE ruta_viaje SET idBus=?, idChofer=?, fechaSalida=?, horaSalida=?, fechaLlegada=?, horaLlegada=?, origen=?, destino=?, precio=?, boletosRestantes=?, estado=? WHERE idViaje=?";
+        try (Connection c = new Conexion().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, r.getIdBus());
+            ps.setInt(2, r.getIdChofer());
+            ps.setDate(3, r.getFechaSalida());
+            ps.setTime(4, r.getHoraSalida());
+            ps.setDate(5, r.getFechaLlegada());
+            ps.setTime(6, r.getHoraLlegada());
+            ps.setInt(7, r.getOrigen());
+            ps.setInt(8, r.getDestino());
+            ps.setBigDecimal(9, r.getPrecio());
+            ps.setInt(10, r.getBoletosRestantes());
+            ps.setInt(11, r.getEstado());
+            ps.setInt(12, r.getIdViaje());
+            int updated = ps.executeUpdate();
+            return updated == 1;
         }
-        return false;
     }
 
-    @Override
-    public boolean EliminarRuta(int id) {
-        String consulta = "UPDATE ruta_viaje SET estado = 0 WHERE idViaje = ?";
-        try {
-            ps = con.prepareStatement(consulta);
-            ps.setInt(1, id);
-            return ps.executeUpdate() > 0;
-        } catch (Exception ex) {
-            ex.printStackTrace();
+    // Eliminar ruta (EliminarRuta) - si prefieres soft-delete cambia a UPDATE estado=0
+    public boolean EliminarRuta(int idViaje) throws SQLException {
+        String sql = "DELETE FROM ruta_viaje WHERE idViaje = ?";
+        try (Connection c = new Conexion().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, idViaje);
+            return ps.executeUpdate() == 1;
         }
-        return false;
+    }
+
+    // Decrementar boletosRestantes (uso interno en transacciones)
+    public boolean decrementarBoletos(int idViaje, Connection conn) throws SQLException {
+        String sql = "UPDATE ruta_viaje SET boletosRestantes = boletosRestantes - 1 WHERE idViaje = ? AND boletosRestantes > 0";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idViaje);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
+    // Mapeador privado
+    private DTORuta mapRowToRuta(ResultSet rs) throws SQLException {
+        DTORuta r = new DTORuta();
+        r.setIdViaje(rs.getInt("idViaje"));
+        r.setIdBus(rs.getInt("idBus"));
+        r.setIdChofer(rs.getInt("idChofer"));
+        r.setFechaSalida(rs.getDate("fechaSalida"));
+        r.setHoraSalida(rs.getTime("horaSalida"));
+        r.setFechaLlegada(rs.getDate("fechaLlegada"));
+        r.setHoraLlegada(rs.getTime("horaLlegada"));
+        r.setOrigen(rs.getInt("origen"));
+        r.setDestino(rs.getInt("destino"));
+        r.setPrecio(rs.getBigDecimal("precio"));
+        r.setBoletosRestantes(rs.getInt("boletosRestantes"));
+        r.setCreador(rs.getInt("creador"));
+        r.setFechaCreacion(rs.getTimestamp("fechaCreacion"));
+        r.setEstado(rs.getInt("estado"));
+        return r;
     }
 }

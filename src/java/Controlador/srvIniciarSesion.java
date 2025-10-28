@@ -163,7 +163,7 @@ public class srvIniciarSesion extends HttpServlet {
                 } else if (rol == 2) {
                     response.sendRedirect("Vista/Empleado/index.jsp");
                 } else if (rol == 3) {
-                    response.sendRedirect("Vista/Cliente/index.jsp");
+                    response.sendRedirect("Vista/index.jsp");
                 } else {
                     System.out.println("DEBUG: rol inesperado (" + rol + "), redirigiendo a login");
                     response.sendRedirect("Vista/login.jsp?error=rol");
@@ -228,7 +228,20 @@ public class srvIniciarSesion extends HttpServlet {
         }
     }
 
-    
+    /**
+     * Cerrar sesión.
+     */
+    private void CerrarSesion(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            HttpSession sesion = request.getSession(false);
+            if (sesion != null) {
+                sesion.invalidate();
+            }
+            response.sendRedirect("Vista/login.jsp");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
 
     /**
      * Solicitar recuperación: genera y envía código por email si existe el
@@ -387,7 +400,6 @@ public class srvIniciarSesion extends HttpServlet {
             response.sendRedirect("Vista/cambiarPassword.jsp?error=ex");
         }
     }
-
     // doGet / doPost
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

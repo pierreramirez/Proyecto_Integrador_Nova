@@ -16,12 +16,15 @@
                 </library>
                 <library dirs="200">
                     <file>${file.reference.activation-1.1.1.jar}</file>
+                    <path-in-war>WEB-INF/lib</path-in-war>
                 </library>
                 <library dirs="200">
                     <file>${file.reference.javax.mail.jar}</file>
+                    <path-in-war>WEB-INF/lib</path-in-war>
                 </library>
                 <library dirs="200">
-                    <file>${file.reference.jbcrypt-0.4.jar}</file>
+                    <file>${file.reference.javax.mail.jar-1}</file>
+                    <path-in-war>WEB-INF/lib</path-in-war>
                 </library>
             </web-module-libraries>
             <web-module-additional-libraries/>

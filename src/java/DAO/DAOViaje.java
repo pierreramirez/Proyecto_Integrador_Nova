@@ -48,8 +48,14 @@ public class DAOViaje {
         }
     }
 
+    /**
+     * Listar todos los viajes e incluir la cantidad de asientos disponibles
+     * (estado = 0)
+     */
     public List<DTOViaje> listarTodos() throws SQLException {
-        String sql = "SELECT * FROM viaje ORDER BY fechaSalida, horaSalida";
+        String sql = "SELECT v.*, "
+                + "(SELECT COUNT(*) FROM asiento_viaje a WHERE a.idViaje = v.idViaje AND a.estado = 0) AS disponibles "
+                + "FROM viaje v ORDER BY v.fechaSalida, v.horaSalida";
         List<DTOViaje> lista = new ArrayList<>();
         Connection con = cn.getConnection();
         PreparedStatement ps = null;
@@ -66,9 +72,21 @@ public class DAOViaje {
                 v.setDestino_id(rs.getInt("destino_id"));
                 v.setFechaSalida(rs.getDate("fechaSalida"));
                 v.setHoraSalida(rs.getTime("horaSalida"));
-                v.setDuracionMin(rs.getInt("duracionMin"));
+
+                // duracionMin puede ser NULL -> usar wasNull para diferenciar 0 vs null
+                int dur = rs.getInt("duracionMin");
+                if (rs.wasNull()) {
+                    v.setDuracionMin(null);
+                } else {
+                    v.setDuracionMin(dur);
+                }
+
                 v.setPrecio(rs.getDouble("precio"));
                 v.setEstado(rs.getInt("estado"));
+
+                // disponibles (subconsulta)
+                v.setDisponibles(rs.getInt("disponibles"));
+
                 lista.add(v);
             }
             return lista;
@@ -85,7 +103,9 @@ public class DAOViaje {
     }
 
     public DTOViaje obtenerPorId(int idViaje) throws SQLException {
-        String sql = "SELECT * FROM viaje WHERE idViaje = ?";
+        String sql = "SELECT v.*, "
+                + "(SELECT COUNT(*) FROM asiento_viaje a WHERE a.idViaje = v.idViaje AND a.estado = 0) AS disponibles "
+                + "FROM viaje v WHERE v.idViaje = ?";
         Connection con = cn.getConnection();
         PreparedStatement ps = null;
         ResultSet rs = null;
@@ -102,9 +122,15 @@ public class DAOViaje {
                 v.setDestino_id(rs.getInt("destino_id"));
                 v.setFechaSalida(rs.getDate("fechaSalida"));
                 v.setHoraSalida(rs.getTime("horaSalida"));
-                v.setDuracionMin(rs.getInt("duracionMin"));
+                int dur = rs.getInt("duracionMin");
+                if (rs.wasNull()) {
+                    v.setDuracionMin(null);
+                } else {
+                    v.setDuracionMin(dur);
+                }
                 v.setPrecio(rs.getDouble("precio"));
                 v.setEstado(rs.getInt("estado"));
+                v.setDisponibles(rs.getInt("disponibles"));
                 return v;
             }
             return null;
@@ -165,9 +191,11 @@ public class DAOViaje {
         }
     }
 
-    // consulta para la vista cliente, ver viajes por destino+origen
+    // consulta para la vista cliente, ver viajes por destino+origen (incluye disponibles)
     public List<DTOViaje> listarPorDestinoOrigen(int destino, int origen) throws SQLException {
-        String sql = "SELECT * FROM viaje WHERE destino_id = ? AND origen_id = ? AND estado = 1 AND fechaSalida >= CURDATE() ORDER BY fechaSalida, horaSalida";
+        String sql = "SELECT v.*, "
+                + "(SELECT COUNT(*) FROM asiento_viaje a WHERE a.idViaje = v.idViaje AND a.estado = 0) AS disponibles "
+                + "FROM viaje v WHERE destino_id = ? AND origen_id = ? AND estado = 1 AND fechaSalida >= CURDATE() ORDER BY fechaSalida, horaSalida";
         List<DTOViaje> lista = new ArrayList<>();
         Connection con = cn.getConnection();
         PreparedStatement ps = null;
@@ -186,9 +214,15 @@ public class DAOViaje {
                 v.setDestino_id(rs.getInt("destino_id"));
                 v.setFechaSalida(rs.getDate("fechaSalida"));
                 v.setHoraSalida(rs.getTime("horaSalida"));
-                v.setDuracionMin(rs.getInt("duracionMin"));
+                int dur = rs.getInt("duracionMin");
+                if (rs.wasNull()) {
+                    v.setDuracionMin(null);
+                } else {
+                    v.setDuracionMin(dur);
+                }
                 v.setPrecio(rs.getDouble("precio"));
                 v.setEstado(rs.getInt("estado"));
+                v.setDisponibles(rs.getInt("disponibles"));
                 lista.add(v);
             }
             return lista;

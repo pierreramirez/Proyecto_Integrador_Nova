@@ -12,14 +12,15 @@ import javax.servlet.http.*;
 import java.util.List;
 import java.sql.Date;
 import java.sql.Time;
+import java.util.ArrayList;
 
 public class ViajeServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
     DAOViaje dao = new DAOViaje();
     DAOAsientoViaje daoAsiento = new DAOAsientoViaje();
-    DAOBuses daoBuses = new DAOBuses();        // asumo que ya existe
-    DAOChoferes daoChoferes = new DAOChoferes();// asumo que ya existe
+    DAOBuses daoBuses = new DAOBuses();
+    DAOChoferes daoChoferes = new DAOChoferes();
     DAOLugar daoLugar = new DAOLugar();
 
     @Override
@@ -32,23 +33,37 @@ public class ViajeServlet extends HttpServlet {
         switch (action) {
             case "listar": {
                 try {
-                    List<DTOViaje> lista = dao.listarTodos();
+                    List<DTOViaje> lista = dao.listarTodos(); // si quieres JOINs, luego adaptamos
                     request.setAttribute("viajes", lista);
                 } catch (Exception e) {
                     request.setAttribute("error", "Error obteniendo viajes: " + e.getMessage());
                     e.printStackTrace();
+                    request.setAttribute("viajes", new ArrayList<DTOViaje>());
                 }
                 request.getRequestDispatcher("Vista/Administrador/Viaje/listar.jsp").forward(request, response);
                 break;
             }
             case "agregar": {
+                // garantizar que nunca pasemos nulls a la JSP
                 try {
-                    request.setAttribute("buses", daoBuses.listarBuses());
-                    request.setAttribute("choferes", daoChoferes.ListarChoferes());
+                    request.setAttribute("buses", safeListBuses());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    request.setAttribute("buses", new ArrayList<>());
+                }
+                try {
+                    request.setAttribute("choferes", safeListChoferes());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    request.setAttribute("choferes", new ArrayList<>());
+                }
+                try {
                     request.setAttribute("lugares", daoLugar.listarActivos());
                 } catch (Exception e) {
                     e.printStackTrace();
+                    request.setAttribute("lugares", new ArrayList<>());
                 }
+
                 request.getRequestDispatcher("Vista/Administrador/Viaje/agregar.jsp").forward(request, response);
                 break;
             }
@@ -57,9 +72,11 @@ public class ViajeServlet extends HttpServlet {
                     int id = Integer.parseInt(request.getParameter("id"));
                     DTOViaje v = dao.obtenerPorId(id);
                     request.setAttribute("viaje", v);
-                    request.setAttribute("buses", daoBuses.listarBuses());
-                    request.setAttribute("choferes", daoChoferes.ListarChoferes());
+
+                    request.setAttribute("buses", safeListBuses());
+                    request.setAttribute("choferes", safeListChoferes());
                     request.setAttribute("lugares", daoLugar.listarActivos());
+
                     request.getRequestDispatcher("Vista/Administrador/Viaje/editar.jsp").forward(request, response);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -78,6 +95,25 @@ public class ViajeServlet extends HttpServlet {
             }
             default:
                 response.sendRedirect("ViajeServlet?action=listar");
+        }
+    }
+
+    // helpers seguros para obtener listas (evitan nulls)
+    private List safeListChoferes() {
+        try {
+            return daoChoferes.ListarChoferes();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
+    private List safeListBuses() {
+        try {
+            return daoBuses.listarBuses();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return new ArrayList<>();
         }
     }
 
@@ -113,9 +149,17 @@ public class ViajeServlet extends HttpServlet {
 
                 int idViaje = dao.crearViaje(v);
                 if (idViaje > 0) {
-                    // generar asientos usando capacidad del bus
-                    int capacidad = daoBuses.obtenerCapacidadBus(idBus); // implementa este método en DAOBuses si no existe
-                    daoAsiento.generarAsientos(idViaje, capacidad, precio);
+                    // generar asientos usando capacidad del bus (asegúrate de tener este método)
+                    int capacidad = 0;
+                    try {
+                        capacidad = daoBuses.obtenerCapacidadBus(idBus); // implementa/ajusta en DAOBuses
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        // fallback: si no existe, podrías usar una constante o dejar 0
+                    }
+                    if (capacidad > 0) {
+                        daoAsiento.generarAsientos(idViaje, capacidad, precio);
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();

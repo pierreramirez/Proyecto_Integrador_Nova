@@ -21,14 +21,6 @@
         <url-pattern>/ViajeServlet</url-pattern>
     </servlet-mapping>
     <servlet>
-        <servlet-name>RutaServlet</servlet-name>
-        <servlet-class>Controlador.RutaServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>RutaServlet</servlet-name>
-        <url-pattern>/RutaServlet</url-pattern>
-    </servlet-mapping>
-    <servlet>
         <servlet-name>LugarServlet</servlet-name>
         <servlet-class>Controlador.LugarServlet</servlet-class>
     </servlet>

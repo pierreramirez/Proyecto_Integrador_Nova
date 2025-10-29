@@ -16,6 +16,9 @@ public class DTOViaje {
     private double precio;
     private int estado;
 
+    // nuevo campo
+    private int disponibles;
+
     public DTOViaje() {
     }
 
@@ -32,7 +35,7 @@ public class DTOViaje {
         this.estado = 1;
     }
 
-    // getters y setters (omito por brevedad; inclúyelos todos)
+    // getters y setters completos
     public int getIdViaje() {
         return idViaje;
     }
@@ -111,5 +114,14 @@ public class DTOViaje {
 
     public void setEstado(int estado) {
         this.estado = estado;
+    }
+
+    // disponibles
+    public int getDisponibles() {
+        return disponibles;
+    }
+
+    public void setDisponibles(int disponibles) {
+        this.disponibles = disponibles;
     }
 }

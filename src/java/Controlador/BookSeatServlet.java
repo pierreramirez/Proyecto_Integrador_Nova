@@ -1,69 +1,50 @@
 package Controlador;
 
-import DAO.DAOVentaPasaje;
-import Modelo.DTOUsuario;
-import java.io.*;
-import java.sql.SQLIntegrityConstraintViolationException;
-import java.sql.SQLException;
-import javax.servlet.*;
+import DAO.DAOReserva;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
+import java.io.IOException;
+import java.sql.SQLException;
 
 public class BookSeatServlet extends HttpServlet {
 
-    DAOVentaPasaje dao = new DAOVentaPasaje();
+    private DAOReserva daoReserva = new DAOReserva();
 
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        req.setCharacterEncoding("UTF-8");
-
-        String sIdViaje = req.getParameter("idViaje");
-        String sAsiento = req.getParameter("asiento");
-        if (sIdViaje == null || sAsiento == null) {
-            resp.sendRedirect(req.getContextPath() + "/rutas.jsp?error=parametros_invalidos");
-            return;
-        }
-
-        int idViaje;
-        int asiento;
-        try {
-            idViaje = Integer.parseInt(sIdViaje);
-            asiento = Integer.parseInt(sAsiento);
-        } catch (NumberFormatException ex) {
-            resp.sendRedirect(req.getContextPath() + "/selectSeat?idViaje=" + sIdViaje + "&error=parametros_invalidos");
-            return;
-        }
-
-        // Obtener idCliente: intenta idUsuario en sesión o el objeto 'user'
-        HttpSession session = req.getSession(false);
-        Integer idCliente = null;
-        if (session != null) {
-            Object idObj = session.getAttribute("idUsuario");
-            if (idObj instanceof Integer) idCliente = (Integer) idObj;
-            else {
-                Object userObj = session.getAttribute("user");
-                if (userObj instanceof DTOUsuario) {
-                    idCliente = ((DTOUsuario) userObj).getIdUsuario();
-                }
+    protected void doPost(javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse response) throws ServletException, IOException {
+        int idViaje = Integer.parseInt(request.getParameter("idViaje"));
+        int idAsiento = Integer.parseInt(request.getParameter("idAsiento"));
+        // tomar idCliente desde sesión si hay login
+        HttpSession session = request.getSession(false);
+        int idCliente = 0;
+        if (session != null && session.getAttribute("clienteId") != null) {
+            idCliente = (int) session.getAttribute("clienteId");
+        } else {
+            // fallback: si lo mandan por parametro (temporal)
+            String sCliente = request.getParameter("idCliente");
+            if (sCliente != null) {
+                try { idCliente = Integer.parseInt(sCliente); } catch (NumberFormatException ignored) {}
             }
         }
 
-        if (idCliente == null) {
-            resp.sendRedirect(req.getContextPath() + "/login.jsp");
+        if (idCliente <= 0) {
+            request.getSession().setAttribute("msg", "Debes iniciar sesión para reservar.");
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
         }
 
         try {
-            boolean ok = dao.reservarAsientoSeguro(idViaje, idCliente, asiento, idCliente);
-            if (ok) {
-                resp.sendRedirect(req.getContextPath() + "/confirmacion.jsp?success=1");
+            int idReserva = daoReserva.crearReserva(idViaje, idAsiento, idCliente);
+            if (idReserva > 0) {
+                request.getSession().setAttribute("msg", "Reserva creada. ID: " + idReserva);
+                response.sendRedirect(request.getContextPath() + "/cliente/misReservas.jsp");
             } else {
-                resp.sendRedirect(req.getContextPath() + "/selectSeat?idViaje=" + idViaje + "&error=asiento_no_disponible");
+                request.getSession().setAttribute("msg", "Asiento ya no disponible.");
+                response.sendRedirect(request.getContextPath() + "/SeatSelectorServlet?idViaje=" + idViaje);
             }
-        } catch (SQLIntegrityConstraintViolationException ex) {
-            // unique constraint: asiento ya vendido
-            resp.sendRedirect(req.getContextPath() + "/selectSeat?idViaje=" + idViaje + "&error=asiento_no_disponible");
-        } catch (SQLException e) {
-            throw new ServletException(e);
+        } catch (SQLException ex) {
+            throw new ServletException(ex);
         }
     }
 }

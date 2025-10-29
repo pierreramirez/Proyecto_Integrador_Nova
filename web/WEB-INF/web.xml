@@ -12,13 +12,29 @@
         <servlet-name>ClienteServlet</servlet-name>
         <url-pattern>/ClienteServlet</url-pattern>
     </servlet-mapping>
-        <servlet>
+    <servlet>
+        <servlet-name>ViajeServlet</servlet-name>
+        <servlet-class>Controlador.ViajeServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ViajeServlet</servlet-name>
+        <url-pattern>/ViajeServlet</url-pattern>
+    </servlet-mapping>
+    <servlet>
         <servlet-name>RutaServlet</servlet-name>
         <servlet-class>Controlador.RutaServlet</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>RutaServlet</servlet-name>
         <url-pattern>/RutaServlet</url-pattern>
+    </servlet-mapping>
+    <servlet>
+        <servlet-name>LugarServlet</servlet-name>
+        <servlet-class>Controlador.LugarServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>LugarServlet</servlet-name>
+        <url-pattern>/LugarServlet</url-pattern>
     </servlet-mapping>
     <servlet>
         <servlet-name>BusServlet</servlet-name>

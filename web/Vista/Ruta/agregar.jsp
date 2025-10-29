@@ -8,8 +8,9 @@
     <body style="background-color: rgb(231, 239, 246);">
         <div class="container mt-4 col-8">
             <h2>Agregar Ruta</h2>
-            <!-- target="_parent" -> la respuesta reemplaza la ventana padre -->
-            <form action="${pageContext.request.contextPath}/RutaServlet" method="post" target="_parent">
+
+            <!-- NO target. Servlet responderá con script que cierra modal en el parent -->
+            <form action="${pageContext.request.contextPath}/RutaServlet" method="post">
                 <input type="hidden" name="action" value="add">
 
                 <div class="row">
@@ -80,7 +81,18 @@
                 </div>
 
                 <button type="submit" class="btn btn-success">💾 Guardar</button>
-                <a href="${pageContext.request.contextPath}/RutaServlet?action=list" class="btn btn-secondary">Cancelar</a>
+
+                <!-- cerrar modal en el parent -->
+                <button type="button" class="btn btn-secondary"
+                        onclick="(function () {
+                                    try {
+                                        const modalEl = parent.document.getElementById('modalRutaForm');
+                                        const modal = parent.bootstrap.Modal.getInstance(modalEl) || new parent.bootstrap.Modal(modalEl);
+                                        modal.hide();
+                                    } catch (e) {
+                                        parent.location.reload();
+                                    }
+                                })();">Cancelar</button>
             </form>
         </div>
     </body>

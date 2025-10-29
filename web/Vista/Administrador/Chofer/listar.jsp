@@ -90,14 +90,12 @@
 
 <!-- ===== Estilos y comportamiento ===== -->
 <style>
-    /* header wrap (permitir que headers se partan en 2 líneas) */
     .th-wrap {
         display:block;
         white-space: normal;
         text-align:center;
     }
 
-    /* Celdas con truncado ... para que el cuerpo no aumente de alto */
     #tablaChoferes {
         table-layout: fixed !important;
         width:100% !important;
@@ -105,18 +103,16 @@
     #tablaChoferes th, #tablaChoferes td {
         overflow: hidden;
         text-overflow: ellipsis;
-        white-space: nowrap; /* NO querías salto en celdas */
+        white-space: nowrap;
         vertical-align: middle;
         box-sizing: border-box;
     }
 
-    /* Asegura que la cabeza generada por DataTables use fixed layout también */
     .dataTables_scrollHeadInner table {
         table-layout: fixed !important;
         width:100% !important;
     }
 
-    /* Ajustes para el contenedor scroll */
     .dataTables_scrollBody {
         max-height: 55vh !important;
     }
@@ -135,7 +131,7 @@
                                            // Inicializa DataTable con scroll (barra lateral en el body)
                                            var table = $('#tablaChoferes').DataTable({
                                                responsive: false,
-                                               scrollY: '55vh', // altura del body; cambia si quieres menos/más
+                                               scrollY: '55vh',
                                                scrollX: true,
                                                scrollCollapse: true,
                                                paging: true,
@@ -143,18 +139,18 @@
                                                lengthMenu: [10, 25, 50],
                                                autoWidth: false,
                                                columnDefs: [
-                                                   {orderable: false, targets: -1, width: '120px'}, // Acciones
-                                                   {targets: 0, width: '60px', className: 'text-center'}, // ID
-                                                   {targets: 1, width: '160px'}, // Apellido Paterno
-                                                   {targets: 2, width: '160px'}, // Apellido Materno
-                                                   {targets: 3, width: '140px'}, // Nombre
-                                                   {targets: 4, width: '110px', className: 'text-center'}, // DNI
-                                                   {targets: 5, width: '130px'}, // Licencia
-                                                   {targets: 6, width: '130px'}, // Fecha Contratación
-                                                   {targets: 7, width: '130px'}, // Fecha Venc.
-                                                   {targets: 8, width: '120px', className: 'text-center'}, // Teléfono
-                                                   {targets: 9, width: '120px', className: 'text-center'}, // Disponibilidad
-                                                   {targets: 10, width: '100px', className: 'text-center'} // Estado
+                                                   {orderable: false, targets: -1, width: '120px'},
+                                                   {targets: 0, width: '60px', className: 'text-center'},
+                                                   {targets: 1, width: '160px'},
+                                                   {targets: 2, width: '160px'},
+                                                   {targets: 3, width: '140px'},
+                                                   {targets: 4, width: '110px', className: 'text-center'},
+                                                   {targets: 5, width: '130px'},
+                                                   {targets: 6, width: '130px'},
+                                                   {targets: 7, width: '130px'},
+                                                   {targets: 8, width: '120px', className: 'text-center'},
+                                                   {targets: 9, width: '120px', className: 'text-center'},
+                                                   {targets: 10, width: '100px', className: 'text-center'}
                                                ],
                                                language: {
                                                    search: "🔍 Buscar:",
@@ -164,7 +160,6 @@
                                                    zeroRecords: "No se encontraron registros"
                                                },
                                                drawCallback: function () {
-                                                   // reaplicar tooltips y sincronizar ancho después de cada dibujo
                                                    applyTooltips();
                                                    setTimeout(syncHeadWidths, 50);
                                                }
@@ -218,11 +213,9 @@
                                                    var $bodyTable = $('.dataTables_scrollBody table');
 
                                                    if ($headTable.length && $bodyTable.length) {
-                                                       // dar al head el ancho total real del body
                                                        var bodyW = $bodyTable.outerWidth();
                                                        $headTable.css('width', bodyW + 'px');
 
-                                                       // sincronizar columna a columna con el primer TR del body
                                                        var $firstRowTds = $bodyTable.find('tr:eq(0) td');
                                                        if ($firstRowTds.length) {
                                                            $firstRowTds.each(function (idx) {
@@ -252,5 +245,23 @@
                                            // ejecutar por primera vez
                                            applyTooltips();
 
+                                           // Escuchar mensajes desde iframe/servlet para actualizar la lista sin que el iframe muestre listar.jsp
+                                           window.addEventListener('message', function (e) {
+                                               // opcional: validar origen si tu app tiene origen fijo:
+                                               // if (e.origin !== location.origin) return;
+
+                                               if (e.data && e.data.type === 'chofer-updated') {
+                                                   try {
+                                                       var modalInst = bootstrap.Modal.getInstance(modalEl);
+                                                       if (modalInst)
+                                                           modalInst.hide();
+                                                   } catch (err) { /* ignore */
+                                                   }
+
+                                                   // si tu DataTable carga por AJAX podrías usar: table.ajax.reload();
+                                                   // como estás renderizando por JSP, recargamos la página para obtener datos actualizados
+                                                   location.reload();
+                                               }
+                                           }, false);
                                        });
 </script>

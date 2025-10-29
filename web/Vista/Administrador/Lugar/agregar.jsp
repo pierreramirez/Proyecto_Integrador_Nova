@@ -2,31 +2,30 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Agregar Bus</title>
+        <title>Agregar Lugar</title>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     </head>
     <body style="background-color: rgb(231, 239, 246);">
         <div class="container mt-4 col-8">
-            <h2>Agregar Bus</h2>
-            <form action="${pageContext.request.contextPath}/BusServlet" method="post">
+            <h2>Agregar Lugar</h2>
+            <form action="${pageContext.request.contextPath}/LugarServlet" method="post">
                 <input type="hidden" name="action" value="add">
 
                 <div class="mb-3">
-                    <label class="form-label">Placa</label>
-                    <input type="text" class="form-control" name="placa" required>
+                    <label class="form-label">Nombre</label>
+                    <input type="text" class="form-control" name="nombre" required>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Capacidad de Asientos</label>
-                    <input type="number" class="form-control" name="capacidadAsientos" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Tipo</label>
-                    <input type="text" class="form-control" name="tipo" required>
-                </div>
+
                 <div class="mb-3">
                     <label class="form-label">Descripción</label>
                     <input type="text" class="form-control" name="descripcion">
                 </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Tipo</label>
+                    <input type="text" class="form-control" name="tipo" value="CIUDAD">
+                </div>
+
                 <div class="mb-3">
                     <label class="form-label">Estado</label>
                     <select class="form-select" name="estado" required>
@@ -37,11 +36,10 @@
 
                 <button type="submit" class="btn btn-success">💾 Guardar</button>
 
-                <!-- cancelar: cerrar modal en el parent sin navegar -->
                 <button type="button" class="btn btn-secondary"
                         onclick="(function () {
                                     try {
-                                        const modalEl = parent.document.getElementById('modalBusForm');
+                                        const modalEl = parent.document.getElementById('modalLugarForm');
                                         const modal = parent.bootstrap.Modal.getInstance(modalEl) || new parent.bootstrap.Modal(modalEl);
                                         modal.hide();
                                     } catch (e) {

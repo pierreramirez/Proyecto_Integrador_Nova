@@ -7,15 +7,12 @@
 <!-- Agrego CSS específico para Buttons -->
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap5.min.css"/>
 
-<!-- CONTENIDO: Programar Rutas (misma apariencia que Administrar Buses, con modal pequeño para agregar/editar) -->
 <div class="container-fluid" style="margin-top:18px;">
     <div class="card m-3 p-3">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h2 class="mb-0">Programar Rutas</h2>
             <div>
-                <!-- Botón agregar -->
                 <a id="btnAgregarRuta" class="btn btn-success" href="#" data-url="${pageContext.request.contextPath}/RutaServlet?action=agregar">➕ Nueva Ruta</a>
-                <!-- Los botones de export se generan por DataTables, pero dejamos un small placeholder si quieres estilos extra -->
             </div>
         </div>
 
@@ -46,7 +43,6 @@
                             <td>S/ ${r.precio}</td>
                             <td>${r.boletosRestantes}</td>
                             <td>
-                                <!-- Editar abre modal pequeño -->
                                 <button type="button"
                                         class="btn btn-warning btn-sm btnEditarRuta"
                                         data-id="${r.idViaje}"
@@ -89,7 +85,6 @@
 <script src="https://cdn.datatables.net/2.0.7/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- DataTables Buttons + dependencias para export (Excel/PDF) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.7/build/pdfmake.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.7/build/vfs_fonts.js"></script>
@@ -100,45 +95,20 @@
 
 <script>
                                        $(document).ready(function () {
-                                           // Inicializar DataTable con Buttons (Excel / PDF)
                                            var table = $('#tablaRutas').DataTable({
-                                               dom: "Bfrtip", // muestra Buttons
+                                               dom: "Bfrtip",
                                                buttons: [
                                                    {
                                                        extend: 'excelHtml5',
                                                        text: '📥 Excel',
                                                        className: 'btn btn-outline-success btn-sm',
-                                                       filename: function () {
-                                                           var d = new Date();
-                                                           return 'Rutas_' + d.toISOString().slice(0, 10);
-                                                       },
-                                                       title: null,
-                                                       exportOptions: {
-                                                           columns: ':not(:last-child)' // excluir la columna Acciones
-                                                       }
+                                                       exportOptions: {columns: ':not(:last-child)'}
                                                    },
                                                    {
                                                        extend: 'pdfHtml5',
                                                        text: '📄 PDF',
                                                        className: 'btn btn-outline-danger btn-sm',
-                                                       filename: function () {
-                                                           var d = new Date();
-                                                           return 'Rutas_' + d.toISOString().slice(0, 10);
-                                                       },
-                                                       title: 'Listado de Rutas',
-                                                       orientation: 'landscape',
-                                                       pageSize: 'A4',
-                                                       exportOptions: {
-                                                           columns: ':not(:last-child)'
-                                                       },
-                                                       customize: function (doc) {
-                                                           // reducir tamaño de fuente en PDF si la tabla es ancha
-                                                           doc.defaultStyle.fontSize = 8;
-                                                           // centrar título
-                                                           if (doc.content && doc.content[0]) {
-                                                               doc.content[0].alignment = 'center';
-                                                           }
-                                                       }
+                                                       exportOptions: {columns: ':not(:last-child)'}
                                                    }
                                                ],
                                                responsive: true,
@@ -156,21 +126,11 @@
                                                }
                                            });
 
-                                           // Modal bootstrap instance
                                            var modalEl = document.getElementById('modalRutaForm');
                                            var bsModal = new bootstrap.Modal(modalEl);
 
-                                           // Exponer para que el iframe pueda llamarlo
+                                           // Exponer para iframe si lo necesitas
                                            window.bsModal = bsModal;
-                                           window.closeRouteModalAndReload = function (reloadParent = true) {
-                                               try {
-                                                   window.bsModal.hide();
-                                               } catch (e) { /* noop */
-                                               }
-                                               if (reloadParent) {
-                                                   window.location.reload();
-                                           }
-                                           };
 
                                            // Abrir modal para Agregar
                                            $('#btnAgregarRuta').on('click', function (e) {
@@ -191,9 +151,22 @@
                                                bsModal.show();
                                            });
 
-                                           // Limpiar iframe al cerrar
                                            $('#modalRutaForm').on('hidden.bs.modal', function () {
                                                $('#modalRutaFrame').attr('src', '');
                                            });
+
+                                           // Listener: cuando recibimos 'ruta-updated' cerramos modal y recargamos
+                                           window.addEventListener('message', function (e) {
+                                               if (e.data && e.data.type === 'ruta-updated') {
+                                                   try {
+                                                       var inst = bootstrap.Modal.getInstance(modalEl);
+                                                       if (inst)
+                                                           inst.hide();
+                                                   } catch (err) { /* ignore */
+                                                   }
+                                                   // recarga completa (si quieres, podemos cambiar por table.ajax.reload())
+                                                   location.reload();
+                                               }
+                                           }, false);
                                        });
 </script>

@@ -123,7 +123,17 @@
                                                $('#modalClienteFrame').attr('src', '');
                                            });
 
-                                           // Nota: para que al enviar desde agregar.jsp/editar.jsp se actualice la lista,
-                                           // añade target="_parent" en los <form> de esos JSPs y redirige/recarga al listar.
+                                           // Escuchar mensajes desde iframe/servlet para actualizar la lista
+                                           window.addEventListener('message', function (e) {
+                                               if (e.data && e.data.type === 'cliente-updated') {
+                                                   try {
+                                                       var modalInst = bootstrap.Modal.getInstance(modalEl);
+                                                       if (modalInst)
+                                                           modalInst.hide();
+                                                   } catch (err) {
+                                                   }
+                                                   location.reload();
+                                               }
+                                           }, false);
                                        });
 </script>

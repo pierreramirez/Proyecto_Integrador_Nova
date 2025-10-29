@@ -2,33 +2,33 @@ package Controlador;
 
 import DAO.DAOLugar;
 import Modelo.DTOLugar;
-
 import java.io.*;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.servlet.*;
 import javax.servlet.http.*;
+import java.util.List;
 
 public class LugarServlet extends HttpServlet {
 
-    private final DAOLugar dao = new DAOLugar();
+    private static final long serialVersionUID = 1L;
+    DAOLugar dao = new DAOLugar();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String action = request.getParameter("action");
-        if (action == null) action = "listar";
+        if (action == null) {
+            action = "listar";
+        }
 
         switch (action) {
             case "listar": {
                 try {
-                    List<DTOLugar> lista = dao.listAll();
+                    List<DTOLugar> lista = dao.listarTodos();
                     request.setAttribute("lugares", lista);
-                    request.getRequestDispatcher("Vista/Administrador/Lugar/listar.jsp").forward(request, response);
                 } catch (Exception e) {
-                    throw new ServletException(e);
+                    request.setAttribute("error", "Error obteniendo lugares: " + e.getMessage());
+                    e.printStackTrace(); // escribe en logs (catalina.out)
                 }
+                request.getRequestDispatcher("Vista/Administrador/Lugar/listar.jsp").forward(request, response);
                 break;
             }
             case "agregar": {
@@ -38,23 +38,25 @@ public class LugarServlet extends HttpServlet {
             case "editar": {
                 try {
                     int id = Integer.parseInt(request.getParameter("id"));
-                    DTOLugar l = dao.getById(id);
-                    request.setAttribute("lugar", l);
+                    DTOLugar lugar = dao.obtenerPorId(id);
+                    request.setAttribute("lugar", lugar);
                     request.getRequestDispatcher("Vista/Administrador/Lugar/editar.jsp").forward(request, response);
                 } catch (NumberFormatException e) {
                     response.sendRedirect("LugarServlet?action=listar");
                 } catch (Exception e) {
-                    throw new ServletException(e);
+                    e.printStackTrace();
+                    response.sendRedirect("LugarServlet?action=listar");
                 }
                 break;
             }
             case "eliminar": {
                 try {
                     int idEliminar = Integer.parseInt(request.getParameter("id"));
-                    dao.deleteLugar(idEliminar); // soft-delete según tu DAO
-                } catch (NumberFormatException ignored) {} catch (SQLException ex) {
-                Logger.getLogger(LugarServlet.class.getName()).log(Level.SEVERE, null, ex);
-            }
+                    dao.eliminarLugar(idEliminar);
+                } catch (NumberFormatException ignored) {
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 response.sendRedirect("LugarServlet?action=listar");
                 break;
             }
@@ -67,34 +69,78 @@ public class LugarServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
         String action = request.getParameter("action");
+        DTOLugar l = new DTOLugar();
 
         if ("add".equals(action)) {
+            l.setNombre(request.getParameter("nombre"));
+            l.setDescripcion(request.getParameter("descripcion"));
+            l.setTipo(request.getParameter("tipo"));
             try {
-                DTOLugar l = new DTOLugar();
-                l.setNombre(request.getParameter("nombre"));
                 l.setEstado(Integer.parseInt(request.getParameter("estado")));
-                dao.crearLugar(l);
-                response.sendRedirect("LugarServlet?action=listar");
-                return;
-            } catch (Exception e) {
-                throw new ServletException(e);
+            } catch (NumberFormatException e) {
+                l.setEstado(1);
             }
+
+            try {
+                int id = dao.crearLugar(l);
+                System.out.println("Lugar creado id=" + id);
+            } catch (Exception e) {
+                e.printStackTrace();
+                request.setAttribute("error", "Error creando lugar: " + e.getMessage());
+            }
+
+            closeModalAndReload(response);
+            return;
         }
 
         if ("update".equals(action)) {
             try {
-                DTOLugar l = new DTOLugar();
-                l.setId(Integer.parseInt(request.getParameter("idLugar")));
-                l.setNombre(request.getParameter("nombre"));
-                l.setEstado(Integer.parseInt(request.getParameter("estado")));
-                dao.updateLugar(l);
+                l.setIdLugar(Integer.parseInt(request.getParameter("idLugar")));
+            } catch (NumberFormatException e) {
                 response.sendRedirect("LugarServlet?action=listar");
                 return;
-            } catch (Exception e) {
-                throw new ServletException(e);
             }
+            l.setNombre(request.getParameter("nombre"));
+            l.setDescripcion(request.getParameter("descripcion"));
+            l.setTipo(request.getParameter("tipo"));
+            try {
+                l.setEstado(Integer.parseInt(request.getParameter("estado")));
+            } catch (NumberFormatException e) {
+                l.setEstado(1);
+            }
+
+            try {
+                boolean ok = dao.actualizarLugar(l);
+                System.out.println("Lugar actualizado ok=" + ok);
+            } catch (Exception e) {
+                e.printStackTrace();
+                request.setAttribute("error", "Error actualizando lugar: " + e.getMessage());
+            }
+
+            closeModalAndReload(response);
+            return;
         }
 
         response.sendRedirect("LugarServlet?action=listar");
+    }
+
+    private void closeModalAndReload(HttpServletResponse response) throws IOException {
+        response.setContentType("text/html;charset=UTF-8");
+        try (PrintWriter out = response.getWriter()) {
+            out.println("<!doctype html>");
+            out.println("<html><head><meta charset='utf-8'><title>OK</title></head><body>");
+            out.println("<script>");
+            out.println("try {");
+            out.println("  var modalEl = parent.document.getElementById('modalLugarForm');");
+            out.println("  if (modalEl) {");
+            out.println("    var modal = parent.bootstrap && parent.bootstrap.Modal ? parent.bootstrap.Modal.getInstance(modalEl) || new parent.bootstrap.Modal(modalEl) : null;");
+            out.println("    if (modal) modal.hide(); else { var btn = modalEl.querySelector('[data-bs-dismiss]'); if (btn) btn.click(); }");
+            out.println("  }");
+            out.println("} catch(e) { /* ignore */ }");
+            out.println("try { parent.postMessage({ type: 'lugar-updated' }, '*'); } catch(e) { }");
+            out.println("try { parent.location.reload(); } catch(e) { }");
+            out.println("</script>");
+            out.println("</body></html>");
+        }
     }
 }

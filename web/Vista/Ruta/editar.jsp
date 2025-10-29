@@ -2,7 +2,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%
     if (request.getAttribute("ruta") == null) {
-        response.sendRedirect(request.getContextPath() + "/RutaServlet?action=list");
+        response.sendRedirect(request.getContextPath() + "/RutaServlet?action=listar");
         return;
     }
 %>
@@ -16,8 +16,8 @@
         <div class="container mt-4 col-8">
             <h2>Editar Ruta #<c:out value="${ruta.idViaje}"/></h2>
 
-            <!-- target="_parent" -->
-            <form action="${pageContext.request.contextPath}/RutaServlet" method="post" target="_parent">
+            <!-- NO target -->
+            <form action="${pageContext.request.contextPath}/RutaServlet" method="post">
                 <input type="hidden" name="action" value="update">
                 <input type="hidden" name="idViaje" value="${ruta.idViaje}">
 
@@ -89,7 +89,18 @@
                 </div>
 
                 <button type="submit" class="btn btn-warning">✏️ Actualizar</button>
-                <a href="${pageContext.request.contextPath}/RutaServlet?action=list" class="btn btn-secondary">Cancelar</a>
+
+                <!-- cerrar modal en parent -->
+                <button type="button" class="btn btn-secondary"
+                        onclick="(function () {
+                                    try {
+                                        const modalEl = parent.document.getElementById('modalRutaForm');
+                                        const modal = parent.bootstrap.Modal.getInstance(modalEl) || new parent.bootstrap.Modal(modalEl);
+                                        modal.hide();
+                                    } catch (e) {
+                                        parent.location.reload();
+                                    }
+                                })();">Cancelar</button>
             </form>
         </div>
     </body>

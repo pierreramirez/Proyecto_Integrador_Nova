@@ -28,8 +28,8 @@
             </a>
           </li>
           <li class="nav-item mb-2">
-            <a class="nav-link" href="${pageContext.request.contextPath}/RutaServlet?action=listar">
-              <i class='bx bxs-map me-2'></i> Programar Ruta
+            <a class="nav-link" href="${pageContext.request.contextPath}/LugarServlet?action=listar">
+              <i class='bx bxs-map me-2'></i> Gestionar Lugares
             </a>
           </li>
           <li class="nav-item mb-2">
@@ -38,8 +38,8 @@
             </a>
           </li>
           <li class="nav-item mb-2">
-            <a class="nav-link" href="${pageContext.request.contextPath}/Vista/AdministrarPasajes.jsp">
-              <i class='bx bxs-coupon me-2'></i> Pasajes
+            <a class="nav-link" href="${pageContext.request.contextPath}/ViajeServlet?action=listar">
+              <i class='bx bxs-coupon me-2'></i> Administrar Viajes
             </a>
           </li>
         </c:if>

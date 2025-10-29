@@ -7,6 +7,7 @@ import DAO.DAOChoferes;
 import DAO.DAOBuses;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
@@ -44,19 +45,7 @@ public class RutaServlet extends HttpServlet {
                 break;
             }
             case "agregar": {
-                try {
-                    request.setAttribute("lugares", daoLugar.listAll());
-                } catch (Exception ignored) {
-                }
-                try {
-                    request.setAttribute("choferes", daoChofer.ListarChoferes());
-                } catch (Exception ignored) {
-                }
-                try {
-                    request.setAttribute("buses", daoBus.listarBuses());
-                } catch (Exception ignored) {
-                }
-
+                safeLoadSelects(request);
                 request.getRequestDispatcher("Vista/Administrador/Ruta/agregar.jsp").forward(request, response);
                 break;
             }
@@ -69,21 +58,7 @@ public class RutaServlet extends HttpServlet {
                         return;
                     }
                     request.setAttribute("ruta", ruta);
-
-                    // listas para selects
-                    try {
-                        request.setAttribute("lugares", daoLugar.listAll());
-                    } catch (Exception ignored) {
-                    }
-                    try {
-                        request.setAttribute("choferes", daoChofer.ListarChoferes());
-                    } catch (Exception ignored) {
-                    }
-                    try {
-                        request.setAttribute("buses", daoBus.listarBuses());
-                    } catch (Exception ignored) {
-                    }
-
+                    safeLoadSelects(request);
                     request.getRequestDispatcher("Vista/Administrador/Ruta/editar.jsp").forward(request, response);
                 } catch (NumberFormatException e) {
                     response.sendRedirect("RutaServlet?action=listar");
@@ -120,7 +95,6 @@ public class RutaServlet extends HttpServlet {
                 r.setIdBus(parseIntParam(request, "idBus"));
                 r.setIdChofer(parseIntParam(request, "idChofer"));
 
-                // fechas (YYYY-MM-DD)
                 String fechaSalidaParam = request.getParameter("fechaSalida");
                 String fechaLlegadaParam = request.getParameter("fechaLlegada");
                 if (fechaSalidaParam == null || fechaSalidaParam.trim().isEmpty()
@@ -130,11 +104,9 @@ public class RutaServlet extends HttpServlet {
                 r.setFechaSalida(Date.valueOf(fechaSalidaParam.trim()));
                 r.setFechaLlegada(Date.valueOf(fechaLlegadaParam.trim()));
 
-                // horas: parseo robusto (acepta "HH:MM" o "HH:MM:SS")
                 Time hs = safeParseTime(request.getParameter("horaSalida"));
                 Time hl = safeParseTime(request.getParameter("horaLlegada"));
                 if (hs == null || hl == null) {
-                    // volver al formulario con selects cargados y mensaje
                     request.setAttribute("error", "Formato de hora inválido. Use HH:MM o HH:MM:SS.");
                     safeLoadSelects(request);
                     request.getRequestDispatcher("Vista/Administrador/Ruta/agregar.jsp").forward(request, response);
@@ -150,11 +122,10 @@ public class RutaServlet extends HttpServlet {
                 r.setCreador(parseIntParam(request, "creador"));
                 r.setEstado(parseIntParam(request, "estado"));
 
-                // Inserta
                 daoRuta.AgregarRuta(r);
 
-                // mantener comportamiento previo: redirigir al listado
-                response.sendRedirect("RutaServlet?action=listar");
+                // responder con script que cierra modal y notifica al padre
+                closeModalAndReload(response, "ruta-updated");
                 return;
             } catch (IllegalArgumentException ex) {
                 request.setAttribute("error", ex.getMessage());
@@ -186,7 +157,7 @@ public class RutaServlet extends HttpServlet {
                 Time hl = safeParseTime(request.getParameter("horaLlegada"));
                 if (hs == null || hl == null) {
                     request.setAttribute("error", "Formato de hora inválido. Use HH:MM o HH:MM:SS.");
-                    // mantener DTO mínimo para que el JSP pueda mostrar algo útil
+                    // reconstruir ruta parcial para mostrar el formulario
                     DTORuta partial = new DTORuta();
                     partial.setIdViaje(parseIntParam(request, "idViaje"));
                     partial.setIdBus(parseIntParam(request, "idBus"));
@@ -208,7 +179,7 @@ public class RutaServlet extends HttpServlet {
 
                 daoRuta.EditarRuta(r);
 
-                response.sendRedirect("RutaServlet?action=listar");
+                closeModalAndReload(response, "ruta-updated");
                 return;
             } catch (IllegalArgumentException ex) {
                 request.setAttribute("error", ex.getMessage());
@@ -224,10 +195,6 @@ public class RutaServlet extends HttpServlet {
     }
 
     // ----------------- helpers -----------------
-    /**
-     * Parse seguro para horas. Acepta "HH:MM" o "HH:MM:SS". Si recibe "HH:MM"
-     * añade ":00". Devuelve java.sql.Time o null si no pudo parsear.
-     */
     private Time safeParseTime(String raw) {
         if (raw == null) {
             return null;
@@ -236,25 +203,19 @@ public class RutaServlet extends HttpServlet {
         if (raw.isEmpty()) {
             return null;
         }
-
         try {
-            // Si ya tiene dos ':' probablemente sea HH:MM:SS
             long colons = raw.chars().filter(ch -> ch == ':').count();
             String normalized = raw;
             if (colons == 1) {
-                // "HH:MM" -> añadir segundos
                 normalized = raw + ":00";
             }
-            // LocalTime.parse acepta HH:MM:SS (ISO_LOCAL_TIME)
             LocalTime lt = LocalTime.parse(normalized);
             return Time.valueOf(lt);
         } catch (DateTimeParseException ex) {
-            // intento fallback: si usuario envió "H:MM" o formato raro, intentar con LocalTime.parse directo
             try {
                 LocalTime lt2 = LocalTime.parse(raw);
                 return Time.valueOf(lt2);
             } catch (Exception ex2) {
-                // No se pudo parsear
                 return null;
             }
         } catch (Exception ex) {
@@ -274,10 +235,9 @@ public class RutaServlet extends HttpServlet {
         }
     }
 
-    // carga selects (lugares/choferes/buses) para volver al formulario en caso de error
     private void safeLoadSelects(HttpServletRequest request) {
         try {
-            request.setAttribute("lugares", daoLugar.listAll());
+            request.setAttribute("lugares", daoLugar.listarActivos());
         } catch (Exception ignored) {
         }
         try {
@@ -287,6 +247,30 @@ public class RutaServlet extends HttpServlet {
         try {
             request.setAttribute("buses", daoBus.listarBuses());
         } catch (Exception ignored) {
+        }
+    }
+
+    private void closeModalAndReload(HttpServletResponse response, String messageType) throws IOException {
+        response.setContentType("text/html;charset=UTF-8");
+        try (PrintWriter out = response.getWriter()) {
+            out.println("<!doctype html><html><head><meta charset='utf-8'><title>OK</title></head><body>");
+            out.println("<script>");
+            out.println("try {");
+            out.println("  if (parent && parent.bootstrap && parent.bootstrap.Modal) {");
+            out.println("    var modalEl = parent.document.getElementById('modalRutaForm');");
+            out.println("    if (modalEl) {");
+            out.println("      var modal = parent.bootstrap.Modal.getInstance(modalEl) || new parent.bootstrap.Modal(modalEl);");
+            out.println("      modal.hide();");
+            out.println("    }");
+            out.println("  } else {");
+            out.println("    var modalEl2 = parent.document.getElementById('modalRutaForm');");
+            out.println("    if (modalEl2) { var btn = modalEl2.querySelector('[data-bs-dismiss]'); if (btn) btn.click(); }");
+            out.println("  }");
+            out.println("} catch(e) { }");
+            out.println("try { parent.postMessage({ type: '" + messageType + "' }, '*'); } catch(e) { }");
+            out.println("try { parent.location.reload(); } catch(e) { }");
+            out.println("</script>");
+            out.println("</body></html>");
         }
     }
 }

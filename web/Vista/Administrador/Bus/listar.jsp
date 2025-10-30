@@ -39,10 +39,10 @@
                                 </c:choose>
                             </td>
                             <td>
-                                <button type="button" class="btn btn-warning btn-sm btnEditarBus" data-id="${b.idBus}">✏️ Editar</button>
+                                <button type="button" class="btn btn-warning btn-sm btnEditarBus" data-id="${b.idBus}">✏</button>
                                 <a href="${pageContext.request.contextPath}/BusServlet?action=eliminar&id=${b.idBus}"
                                    class="btn btn-danger btn-sm"
-                                   onclick="return confirm('¿Seguro que deseas eliminar este bus?');">🗑️ Eliminar</a>
+                                   onclick="return confirm('¿Seguro que deseas eliminar este bus?');">🗑</a>
                             </td>
                         </tr>
                     </c:forEach>

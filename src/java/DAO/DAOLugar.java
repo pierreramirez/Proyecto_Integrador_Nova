@@ -1,86 +1,171 @@
 package DAO;
 
-import Persistencia.Conexion;
 import Modelo.DTOLugar;
+import Persistencia.Conexion;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class DAOLugar {
 
-    // Listar todos (para dropdowns)
-    public List<DTOLugar> listAll() throws SQLException {
+    private Conexion cn = new Conexion();
+
+    public int crearLugar(DTOLugar l) throws SQLException {
+        String sql = "INSERT INTO lugar (nombre, descripcion, tipo, estado) VALUES (?, ?, ?, ?)";
+        Connection con = cn.getConnection(); // NO cerrar esta conexión aquí
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, l.getNombre());
+            ps.setString(2, l.getDescripcion());
+            ps.setString(3, l.getTipo());
+            ps.setInt(4, l.getEstado());
+            ps.executeUpdate();
+            rs = ps.getGeneratedKeys();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+            return -1;
+        } finally {
+            if (rs != null) try {
+                rs.close();
+            } catch (SQLException ignore) {
+            }
+            if (ps != null) try {
+                ps.close();
+            } catch (SQLException ignore) {
+            }
+            // NO cerrar 'con' porque lo gestiona Persistencia.Conexion
+        }
+    }
+
+    public boolean actualizarLugar(DTOLugar l) throws SQLException {
+        String sql = "UPDATE lugar SET nombre = ?, descripcion = ?, tipo = ?, estado = ? WHERE idLugar = ?";
+        Connection con = cn.getConnection();
+        PreparedStatement ps = null;
+        try {
+            ps = con.prepareStatement(sql);
+            ps.setString(1, l.getNombre());
+            ps.setString(2, l.getDescripcion());
+            ps.setString(3, l.getTipo());
+            ps.setInt(4, l.getEstado());
+            ps.setInt(5, l.getIdLugar());
+            return ps.executeUpdate() > 0;
+        } finally {
+            if (ps != null) try {
+                ps.close();
+            } catch (SQLException ignore) {
+            }
+        }
+    }
+
+    public boolean eliminarLugar(int idLugar) throws SQLException {
+        String sql = "DELETE FROM lugar WHERE idLugar = ?";
+        Connection con = cn.getConnection();
+        PreparedStatement ps = null;
+        try {
+            ps = con.prepareStatement(sql);
+            ps.setInt(1, idLugar);
+            return ps.executeUpdate() > 0;
+        } finally {
+            if (ps != null) try {
+                ps.close();
+            } catch (SQLException ignore) {
+            }
+        }
+    }
+
+    public DTOLugar obtenerPorId(int idLugar) throws SQLException {
+        String sql = "SELECT * FROM lugar WHERE idLugar = ?";
+        Connection con = cn.getConnection();
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            ps = con.prepareStatement(sql);
+            ps.setInt(1, idLugar);
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                DTOLugar l = new DTOLugar();
+                l.setIdLugar(rs.getInt("idLugar"));
+                l.setNombre(rs.getString("nombre"));
+                l.setDescripcion(rs.getString("descripcion"));
+                l.setTipo(rs.getString("tipo"));
+                l.setEstado(rs.getInt("estado"));
+                return l;
+            }
+            return null;
+        } finally {
+            if (rs != null) try {
+                rs.close();
+            } catch (SQLException ignore) {
+            }
+            if (ps != null) try {
+                ps.close();
+            } catch (SQLException ignore) {
+            }
+        }
+    }
+
+    public List<DTOLugar> listarTodos() throws SQLException {
+        String sql = "SELECT * FROM lugar ORDER BY nombre";
         List<DTOLugar> lista = new ArrayList<>();
-        String sql = "SELECT idLugar, nombre, estado FROM lugares WHERE estado = 1 ORDER BY nombre";
-        try (Connection c = new Conexion().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        Connection con = cn.getConnection();
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            ps = con.prepareStatement(sql);
+            rs = ps.executeQuery();
             while (rs.next()) {
                 DTOLugar l = new DTOLugar();
-                l.setId(rs.getInt("idLugar"));
+                l.setIdLugar(rs.getInt("idLugar"));
                 l.setNombre(rs.getString("nombre"));
+                l.setDescripcion(rs.getString("descripcion"));
+                l.setTipo(rs.getString("tipo"));
                 l.setEstado(rs.getInt("estado"));
                 lista.add(l);
             }
-        }
-        return lista;
-    }
-
-    // Obtener por id
-    public DTOLugar getById(int id) throws SQLException {
-        String sql = "SELECT idLugar, nombre, estado FROM lugares WHERE idLugar = ?";
-        try (Connection c = new Conexion().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    DTOLugar l = new DTOLugar();
-                    l.setId(rs.getInt("idLugar"));
-                    l.setNombre(rs.getString("nombre"));
-                    l.setEstado(rs.getInt("estado"));
-                    return l;
-                }
+            return lista;
+        } finally {
+            if (rs != null) try {
+                rs.close();
+            } catch (SQLException ignore) {
+            }
+            if (ps != null) try {
+                ps.close();
+            } catch (SQLException ignore) {
             }
         }
-        return null;
     }
 
-    // Crear
-    public int crearLugar(DTOLugar l) throws SQLException {
-        String sql = "INSERT INTO lugares (nombre, estado) VALUES (?, ?)";
-        try (Connection c = new Conexion().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setString(1, l.getNombre());
-            ps.setInt(2, l.getEstado());
-            int aff = ps.executeUpdate();
-            if (aff == 0) return -1;
-            try (ResultSet gk = ps.getGeneratedKeys()) {
-                if (gk.next()) return gk.getInt(1);
+    public List<DTOLugar> listarActivos() throws SQLException {
+        String sql = "SELECT * FROM lugar WHERE estado = 1 ORDER BY nombre";
+        List<DTOLugar> lista = new ArrayList<>();
+        Connection con = cn.getConnection();
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            ps = con.prepareStatement(sql);
+            rs = ps.executeQuery();
+            while (rs.next()) {
+                DTOLugar l = new DTOLugar();
+                l.setIdLugar(rs.getInt("idLugar"));
+                l.setNombre(rs.getString("nombre"));
+                l.setDescripcion(rs.getString("descripcion"));
+                l.setTipo(rs.getString("tipo"));
+                l.setEstado(rs.getInt("estado"));
+                lista.add(l);
             }
-        }
-        return -1;
-    }
-
-    // Actualizar
-    public boolean updateLugar(DTOLugar l) throws SQLException {
-        String sql = "UPDATE lugares SET nombre = ?, estado = ? WHERE idLugar = ?";
-        try (Connection c = new Conexion().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setString(1, l.getNombre());
-            ps.setInt(2, l.getEstado());
-            ps.setInt(3, l.getId());
-            return ps.executeUpdate() == 1;
-        }
-    }
-
-    // Borrar (o mejor: desactivar)
-    public boolean deleteLugar(int id) throws SQLException {
-        // opción: soft delete -> SET estado = 0
-        String sql = "UPDATE lugares SET estado = 0 WHERE idLugar = ?";
-        try (Connection c = new Conexion().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            return ps.executeUpdate() == 1;
+            return lista;
+        } finally {
+            if (rs != null) try {
+                rs.close();
+            } catch (SQLException ignore) {
+            }
+            if (ps != null) try {
+                ps.close();
+            } catch (SQLException ignore) {
+            }
         }
     }
 }

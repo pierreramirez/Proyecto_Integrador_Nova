@@ -163,7 +163,7 @@ public class srvIniciarSesion extends HttpServlet {
                 } else if (rol == 2) {
                     response.sendRedirect("Vista/Empleado/index.jsp");
                 } else if (rol == 3) {
-                    response.sendRedirect("Vista/index.jsp");
+                    response.sendRedirect("Vista/Cliente/index.jsp");
                 } else {
                     System.out.println("DEBUG: rol inesperado (" + rol + "), redirigiendo a login");
                     response.sendRedirect("Vista/login.jsp?error=rol");

@@ -8,7 +8,7 @@
     <body style="background-color: rgb(231, 239, 246);">
         <div class="container mt-4 col-8">
             <h2>Agregar Chofer</h2>
-            <form action="../../ChoferServlet" method="post">
+            <form action="${pageContext.request.contextPath}/ChoferServlet" method="post">
                 <input type="hidden" name="action" value="add">
 
                 <div class="mb-3">
@@ -59,7 +59,18 @@
                 </div>
 
                 <button type="submit" class="btn btn-success">💾 Guardar</button>
-                <a href="../../ChoferServlet?action=listar" class="btn btn-secondary">Cancelar</a>
+
+                <!-- cancelar: cerrar modal en el parent sin navegar -->
+                <button type="button" class="btn btn-secondary"
+                        onclick="(function () {
+                            try {
+                                const modalEl = parent.document.getElementById('modalForm');
+                                const modal = parent.bootstrap.Modal.getInstance(modalEl) || new parent.bootstrap.Modal(modalEl);
+                                modal.hide();
+                            } catch (e) {
+                                parent.location.reload();
+                            }
+                        })();">Cancelar</button>
             </form>
         </div>
     </body>

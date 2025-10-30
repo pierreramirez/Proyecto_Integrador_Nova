@@ -11,7 +11,8 @@
             <h2>Editar Chofer</h2>
             <form action="${pageContext.request.contextPath}/ChoferServlet" method="post">
                 <input type="hidden" name="action" value="update">
-                <input type="hidden" name="idChofer" value="${chofer.id}">
+                <!-- usar la propiedad 'id' que tiene tu DTO -->
+                <input type="hidden" name="id" value="${chofer.id}">
 
                 <div class="mb-3">
                     <label class="form-label">Apellido Paterno</label>
@@ -57,11 +58,22 @@
                         <select class="form-select" name="estado" required>
                             <option value="1" <c:if test="${chofer.estado == 1}">selected</c:if>>Activo</option>
                         <option value="0" <c:if test="${chofer.estado == 0}">selected</c:if>>Inactivo</option>
-                        </select>
-                    </div>
+                    </select>
+                </div>
 
-                    <button type="submit" class="btn btn-warning">✏️ Actualizar</button>
-                    <a href="${pageContext.request.contextPath}/ChoferServlet?action=listar" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-warning">✏️ Actualizar</button>
+
+                <!-- cancelar: cerrar modal en el parent -->
+                <button type="button" class="btn btn-secondary"
+                        onclick="(function () {
+                            try {
+                                const modalEl = parent.document.getElementById('modalForm');
+                                const modal = parent.bootstrap.Modal.getInstance(modalEl) || new parent.bootstrap.Modal(modalEl);
+                                modal.hide();
+                            } catch (e) {
+                                parent.location.reload();
+                            }
+                        })();">Cancelar</button>
             </form>
         </div>
     </body>

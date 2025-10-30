@@ -1,9 +1,15 @@
 package Modelo;
 
-import java.sql.Date;
+import java.io.Serializable;
+import java.util.Date;
 
-public class DTOChofer {
+public class DTOChofer implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    // campo principal (tu DAO usa setId/ getId)
     private int id;
+
     private String appat;
     private String apmat;
     private String nombre;
@@ -13,12 +19,12 @@ public class DTOChofer {
     private Date fechaVencimientoLicencia;
     private int telefono;
     private int disponibilidad;
-    private int creador;
-    private Date fechaCreacion;
     private int estado;
 
-    public DTOChofer() {}
+    public DTOChofer() {
+    }
 
+    // --- id getters / setters compatibles ---
     public int getId() {
         return id;
     }
@@ -27,6 +33,16 @@ public class DTOChofer {
         this.id = id;
     }
 
+    // alias para JSP/EL que espera idChofer
+    public int getIdChofer() {
+        return id;
+    }
+
+    public void setIdChofer(int idChofer) {
+        this.id = idChofer;
+    }
+
+    // --- otros getters / setters ---
     public String getAppat() {
         return appat;
     }
@@ -43,6 +59,7 @@ public class DTOChofer {
         this.apmat = apmat;
     }
 
+    // Este es el getter que usan tus JSP: ${c.nombre}
     public String getNombre() {
         return nombre;
     }
@@ -71,8 +88,8 @@ public class DTOChofer {
         return fechaContratacion;
     }
 
-    public void setFechaContratacion(Date fehaContratacion) {
-        this.fechaContratacion = fehaContratacion;
+    public void setFechaContratacion(Date fechaContratacion) {
+        this.fechaContratacion = fechaContratacion;
     }
 
     public Date getFechaVencimientoLicencia() {
@@ -106,20 +123,19 @@ public class DTOChofer {
     public void setEstado(int estado) {
         this.estado = estado;
     }
-    
-    public int getCreador() {
-        return creador;
-    }
 
-    public void setCreador(int creador) {
-        this.creador = creador;
-    }
-
-    public Date getFechaCreacion() {
-        return fechaCreacion;
-    }
-
-    public void setFechaCreacion(Date fechaCreacion) {
-        this.fechaCreacion = fechaCreacion;
+    // utilidad: nombre completo
+    public String getNombreCompleto() {
+        StringBuilder sb = new StringBuilder();
+        if (appat != null && !appat.isEmpty()) {
+            sb.append(appat).append(" ");
+        }
+        if (apmat != null && !apmat.isEmpty()) {
+            sb.append(apmat).append(" ");
+        }
+        if (nombre != null) {
+            sb.append(nombre);
+        }
+        return sb.toString().trim();
     }
 }

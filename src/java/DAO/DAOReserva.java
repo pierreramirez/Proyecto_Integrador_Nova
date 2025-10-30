@@ -1,15 +1,20 @@
 package DAO;
 
 import Persistencia.Conexion;
+
 import java.sql.*;
 
 public class DAOReserva {
 
-    private Conexion cn = new Conexion();
+    private final Conexion cn = new Conexion();
 
     /**
      * Crea una reserva para el asiento indicado. Retorna idReserva (>0) si se
      * creó, 0 si asiento no estaba disponible.
+     *
+     * Flujo: - SELECT estado FROM asiento_viaje WHERE idAsientoViaje = ? FOR
+     * UPDATE - Si estado == 0 -> INSERT INTO reserva(...) RETURN_GENERATED_KEYS
+     * - UPDATE asiento_viaje SET estado = 1 WHERE idAsientoViaje = ? - commit
      */
     public int crearReserva(int idViaje, int idAsientoViaje, int idCliente) throws SQLException {
         Connection con = cn.getConnection();
@@ -17,6 +22,7 @@ public class DAOReserva {
         PreparedStatement psInsert = null;
         PreparedStatement psUpdate = null;
         ResultSet rs = null;
+        ResultSet rsKeys = null;
         boolean originalAutoCommit = true;
         try {
             originalAutoCommit = con.getAutoCommit();
@@ -38,13 +44,14 @@ public class DAOReserva {
             }
 
             // 2) insertar la reserva
-            String sqlInsert = "INSERT INTO reserva (idViaje, idAsientoViaje, idCliente, estado) VALUES (?, ?, ?, 1)";
+            String sqlInsert = "INSERT INTO reserva (idViaje, idAsientoViaje, idCliente, fechaReserva, estado) VALUES (?, ?, ?, NOW(), ?)";
             psInsert = con.prepareStatement(sqlInsert, Statement.RETURN_GENERATED_KEYS);
             psInsert.setInt(1, idViaje);
             psInsert.setInt(2, idAsientoViaje);
             psInsert.setInt(3, idCliente);
+            psInsert.setInt(4, 1); // 1 = reservado (ajusta segun tu lógica)
             psInsert.executeUpdate();
-            ResultSet rsKeys = psInsert.getGeneratedKeys();
+            rsKeys = psInsert.getGeneratedKeys();
             int idReserva = 0;
             if (rsKeys.next()) {
                 idReserva = rsKeys.getInt(1);
@@ -60,7 +67,9 @@ public class DAOReserva {
             return idReserva;
         } catch (SQLException ex) {
             try {
-                con.rollback();
+                if (con != null) {
+                    con.rollback();
+                }
             } catch (SQLException ignore) {
             }
             throw ex;
@@ -68,6 +77,12 @@ public class DAOReserva {
             try {
                 if (rs != null) {
                     rs.close();
+                }
+            } catch (SQLException ignore) {
+            }
+            try {
+                if (rsKeys != null) {
+                    rsKeys.close();
                 }
             } catch (SQLException ignore) {
             }
@@ -90,7 +105,9 @@ public class DAOReserva {
             } catch (SQLException ignore) {
             }
             try {
-                con.setAutoCommit(originalAutoCommit);
+                if (con != null) {
+                    con.setAutoCommit(originalAutoCommit);
+                }
             } catch (SQLException ignore) {
             }
         }

@@ -5,7 +5,7 @@ public class DTOAsientoViaje {
     private int idAsientoViaje;
     private int idViaje;
     private int numeroAsiento;
-    private int estado; // 0 disp,1 reservado,2 ocupado
+    private int estado; // 0 disponible, 1 reservado, 2 ocupado
     private double precio;
 
     public DTOAsientoViaje() {
@@ -18,7 +18,6 @@ public class DTOAsientoViaje {
         this.estado = 0;
     }
 
-    // getters y setters
     public int getIdAsientoViaje() {
         return idAsientoViaje;
     }

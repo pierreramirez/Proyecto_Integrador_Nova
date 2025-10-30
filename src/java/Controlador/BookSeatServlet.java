@@ -8,23 +8,47 @@ import javax.servlet.http.*;
 import java.io.IOException;
 import java.sql.SQLException;
 
+@WebServlet("/BookSeatServlet")
 public class BookSeatServlet extends HttpServlet {
 
-    private DAOReserva daoReserva = new DAOReserva();
+    private final DAOReserva daoReserva = new DAOReserva();
 
+    @Override
     protected void doPost(javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse response) throws ServletException, IOException {
-        int idViaje = Integer.parseInt(request.getParameter("idViaje"));
-        int idAsiento = Integer.parseInt(request.getParameter("idAsiento"));
-        // tomar idCliente desde sesión si hay login
+        String sIdViaje = request.getParameter("idViaje");
+        String sIdAsiento = request.getParameter("idAsiento");
+
+        if (sIdViaje == null || sIdAsiento == null) {
+            request.getSession().setAttribute("msg", "Parámetros inválidos.");
+            response.sendRedirect(request.getContextPath() + "/cliente/buscar.jsp");
+            return;
+        }
+
+        int idViaje, idAsiento, idCliente = 0;
+        try {
+            idViaje = Integer.parseInt(sIdViaje);
+            idAsiento = Integer.parseInt(sIdAsiento);
+        } catch (NumberFormatException ex) {
+            request.getSession().setAttribute("msg", "Parámetros inválidos.");
+            response.sendRedirect(request.getContextPath() + "/cliente/buscar.jsp");
+            return;
+        }
+
+        // Obtener idCliente desde sesión (recomendado)
         HttpSession session = request.getSession(false);
-        int idCliente = 0;
         if (session != null && session.getAttribute("clienteId") != null) {
-            idCliente = (int) session.getAttribute("clienteId");
+            try {
+                idCliente = Integer.parseInt(session.getAttribute("clienteId").toString());
+            } catch (Exception ignored) {
+            }
         } else {
-            // fallback: si lo mandan por parametro (temporal)
+            // fallback: si mandan por parámetro (temporal)
             String sCliente = request.getParameter("idCliente");
             if (sCliente != null) {
-                try { idCliente = Integer.parseInt(sCliente); } catch (NumberFormatException ignored) {}
+                try {
+                    idCliente = Integer.parseInt(sCliente);
+                } catch (NumberFormatException ignored) {
+                }
             }
         }
 
@@ -37,10 +61,10 @@ public class BookSeatServlet extends HttpServlet {
         try {
             int idReserva = daoReserva.crearReserva(idViaje, idAsiento, idCliente);
             if (idReserva > 0) {
-                request.getSession().setAttribute("msg", "Reserva creada. ID: " + idReserva);
+                request.getSession().setAttribute("msg", "Reserva creada exitosamente. ID: " + idReserva);
                 response.sendRedirect(request.getContextPath() + "/cliente/misReservas.jsp");
             } else {
-                request.getSession().setAttribute("msg", "Asiento ya no disponible.");
+                request.getSession().setAttribute("msg", "El asiento ya no está disponible.");
                 response.sendRedirect(request.getContextPath() + "/SeatSelectorServlet?idViaje=" + idViaje);
             }
         } catch (SQLException ex) {

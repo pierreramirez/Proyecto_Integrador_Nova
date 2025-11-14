@@ -1,38 +1,41 @@
 package Util;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Properties;
 import javax.mail.*;
 import javax.mail.internet.*;
 
 public class EmailUtil {
 
-    private static final String USERNAME = "gangape04@gmail.com";
-    private static final String APP_PASSWORD = "labkknpwfyhbxvbx"; // app password Gmail
+    // Cambia estos valores por tu cuenta y app password
+    private static final String SMTP_USER = "pierrekrrera@gmail.com";
+    private static final String SMTP_APP_PASSWORD = "bnmpuotyuimljluk"; // 16 chars (app password)
 
-    public static void enviarCodigoVerificacion(String destino, String codigo) throws MessagingException, UnsupportedEncodingException {
+    public static void enviarCodigoVerificacion(String destino, String codigo) throws MessagingException {
         Properties props = new Properties();
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.smtp.host", "smtp.gmail.com");
-        props.put("mail.smtp.port", "587");
+        props.put("mail.smtp.port", "465");
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.ssl.enable", "true");
+        props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
 
-        Session session = Session.getInstance(props, new javax.mail.Authenticator() {
+        Session session = Session.getInstance(props, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(USERNAME, APP_PASSWORD);
+                return new PasswordAuthentication(SMTP_USER, SMTP_APP_PASSWORD);
             }
         });
 
-        Message msg = new MimeMessage(session);
-        msg.setFrom(new InternetAddress(USERNAME, "NOVA'S TRAVELS"));
-        msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(destino));
-        msg.setSubject("Código de verificación - NOVA'S TRAVELS");
-        String cuerpo = "<p>Tu código de verificación es: <b>" + codigo + "</b></p>"
-                      + "<p>Válido por 5 minutos.</p>";
-        msg.setContent(cuerpo, "text/html; charset=utf-8");
+        // Habilita debug para ver la conversación SMTP en la consola/log de Tomcat
+        session.setDebug(true);
 
-        Transport.send(msg);
+        Message message = new MimeMessage(session);
+        message.setFrom(new InternetAddress(SMTP_USER));
+        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(destino));
+        message.setSubject("Código de verificación - NOVA'S TRAVELS");
+        String body = "Tu código de verificación es: " + codigo + "\n\n"
+                + "Si no solicitaste este código, ignora este correo.";
+        message.setText(body);
+
+        Transport.send(message);
     }
 }
-

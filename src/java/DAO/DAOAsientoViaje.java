@@ -8,11 +8,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * DAO unificado para gestión de asientos por viaje. - usa una nueva Conexion()
- * por método (evita cerrar una conexión compartida) - ofrece: generarAsientos,
- * listarAsientosPorViaje, contarDisponibles, obtenerAsientoPorId,
- * reservarAsiento (transaccional con FOR UPDATE), reservarAsientoAtomic (update
- * simple con comprobación), liberarAsiento.
+ * DAO unificado para gestión de asientos por viaje.
+ *
+ * Ofrece: - generarAsientos - listarAsientosPorViaje - contarDisponibles -
+ * obtenerAsientoPorId - reservarAsiento (transaccional con SELECT ... FOR
+ * UPDATE, recomendado) - reservarAsientoAtomic (UPDATE condicional por PK) -
+ * reservarAsientosTransactional (reserva múltiple dentro de una transacción) -
+ * liberarAsiento
+ *
+ * IMPORTANTE: Ajusta los SQL INSERT/UPDATE a las columnas reales de tu esquema
+ * (venta_pasaje, estados, etc.)
  */
 public class DAOAsientoViaje {
 
@@ -23,6 +28,7 @@ public class DAOAsientoViaje {
     public void generarAsientos(int idViaje, int capacidad, double precio) throws SQLException {
         String countSql = "SELECT COUNT(*) AS cnt FROM asiento_viaje WHERE idViaje = ?";
         String insertSql = "INSERT INTO asiento_viaje (idViaje, numeroAsiento, estado, precio) VALUES (?, ?, 0, ?)";
+
         Conexion cx = new Conexion();
         try (Connection con = cx.getConnection(); PreparedStatement psCount = con.prepareStatement(countSql)) {
 
@@ -135,6 +141,7 @@ public class DAOAsientoViaje {
 
         Conexion cx = new Conexion();
         try (Connection con = cx.getConnection()) {
+            boolean originalAuto = con.getAutoCommit();
             try {
                 con.setAutoCommit(false);
 
@@ -188,7 +195,7 @@ public class DAOAsientoViaje {
                 throw ex;
             } finally {
                 try {
-                    con.setAutoCommit(true);
+                    con.setAutoCommit(originalAuto);
                 } catch (SQLException ignore) {
                 }
             }
@@ -203,18 +210,122 @@ public class DAOAsientoViaje {
         String sql = "UPDATE asiento_viaje SET estado = 1 WHERE idAsientoViaje = ? AND estado = 0";
         Conexion cx = new Conexion();
         try (Connection con = cx.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-            con.setAutoCommit(false);
-            ps.setInt(1, idAsientoViaje);
-            int updated = ps.executeUpdate();
-            if (updated > 0) {
+
+            boolean originalAuto = con.getAutoCommit();
+            try {
+                con.setAutoCommit(false);
+                ps.setInt(1, idAsientoViaje);
+                int updated = ps.executeUpdate();
+                if (updated > 0) {
+                    con.commit();
+                    return true;
+                } else {
+                    con.rollback();
+                    return false;
+                }
+            } catch (SQLException ex) {
+                try {
+                    con.rollback();
+                } catch (SQLException ignore) {
+                }
+                throw ex;
+            } finally {
+                try {
+                    con.setAutoCommit(originalAuto);
+                } catch (SQLException ignore) {
+                }
+            }
+        }
+    }
+
+    /**
+     * Reservar múltiples asientos dentro de una única transacción (todo o
+     * nada). Usa SELECT ... FOR UPDATE por cada asiento para bloquear fila,
+     * luego actualiza y crea registros en venta_pasaje. Si cualquiera falla,
+     * hace rollback.
+     *
+     * @param asientoIds lista de idAsientoViaje (PKs) a reservar
+     * @param clienteId id del cliente que compra
+     * @return true si todos se reservaron correctamente, false si algún asiento
+     * ya estaba ocupado o error
+     * @throws SQLException
+     */
+    public boolean reservarAsientosTransactional(List<Integer> asientoIds, int clienteId) throws SQLException {
+        if (asientoIds == null || asientoIds.isEmpty()) {
+            return false;
+        }
+
+        // Queries: obtenemos por PK y hacemos FOR UPDATE
+        String selectSql = "SELECT idAsientoViaje, idViaje, numeroAsiento, estado FROM asiento_viaje WHERE idAsientoViaje = ? FOR UPDATE";
+        String updateSql = "UPDATE asiento_viaje SET estado = 1 WHERE idAsientoViaje = ?";
+        String insertVentaSql = "INSERT INTO venta_pasaje (idViaje, idCliente, asiento_num, fechaCompra, estado) VALUES (?, ?, ?, NOW(), 'VENDIDO')";
+
+        Conexion cx = new Conexion();
+        try (Connection con = cx.getConnection()) {
+            boolean originalAuto = con.getAutoCommit();
+            try {
+                con.setAutoCommit(false);
+
+                for (Integer idAsiento : asientoIds) {
+                    // SELECT FOR UPDATE por PK
+                    int idViaje;
+                    int asientoNum;
+                    int estado;
+                    try (PreparedStatement psSel = con.prepareStatement(selectSql)) {
+                        psSel.setInt(1, idAsiento);
+                        try (ResultSet rs = psSel.executeQuery()) {
+                            if (!rs.next()) {
+                                con.rollback();
+                                return false; // asiento no existe
+                            }
+                            idViaje = rs.getInt("idViaje");
+                            asientoNum = rs.getInt("numeroAsiento");
+                            estado = rs.getInt("estado");
+                            if (estado != 0) {
+                                con.rollback();
+                                return false; // alguno ya estaba ocupado
+                            }
+                        }
+                    }
+
+                    // actualizar asiento
+                    try (PreparedStatement psUpd = con.prepareStatement(updateSql)) {
+                        psUpd.setInt(1, idAsiento);
+                        int u = psUpd.executeUpdate();
+                        if (u <= 0) {
+                            con.rollback();
+                            return false;
+                        }
+                    }
+
+                    // insertar venta (usa idViaje y numeroAsiento obtenidos)
+                    try (PreparedStatement psIns = con.prepareStatement(insertVentaSql)) {
+                        psIns.setInt(1, idViaje);
+                        psIns.setInt(2, clienteId);
+                        psIns.setInt(3, asientoNum);
+                        int ins = psIns.executeUpdate();
+                        if (ins <= 0) {
+                            con.rollback();
+                            return false;
+                        }
+                    }
+                }
+
+                // Si llegamos aquí, todo OK
                 con.commit();
                 return true;
-            } else {
-                con.rollback();
-                return false;
+            } catch (SQLException ex) {
+                try {
+                    con.rollback();
+                } catch (SQLException ignore) {
+                }
+                throw ex;
+            } finally {
+                try {
+                    con.setAutoCommit(originalAuto);
+                } catch (SQLException ignore) {
+                }
             }
-        } catch (SQLException ex) {
-            throw ex;
         }
     }
 

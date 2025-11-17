@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NOVAS - Viajes Seguros y Cómodos</title>
-    <link href="../css/novas-landing.css" rel="stylesheet" type="text/css"/>
+    <link href="${pageContext.request.contextPath}/css/novas-landing.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 
     <!-- Pequeños estilos locales para alinear el botón en el header -->
@@ -27,7 +27,7 @@
         <nav class="navbar">
             <div class="container" style="display:flex; align-items:center; justify-content:space-between;">
                 <div class="nav-brand" style="display:flex; align-items:center; gap:10px;">
-                    <img src="${pageContext.request.contextPath}/Imagenes/logo-novas.png" alt="NOVAS Logo" class="logo">
+                    <img src="${pageContext.request.contextPath}/Imagenes/novas_logo.png" alt="NOVAS Logo" class="logo">
                     <span class="company-name">NOVAS</span>
                 </div>
 
@@ -261,7 +261,7 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <div class="footer-logo">
-                        <img src="${pageContext.request.contextPath}/Imagenes/logo-novas-white.png" alt="NOVAS" class="logo">
+                        <img src="${pageContext.request.contextPath}/Imagenes/novas_logo.png" alt="NOVAS" class="logo">
                         <span class="company-name">NOVAS</span>
                     </div>
                     <p class="footer-text">Viajes seguros y cómodos por todo el Perú</p>

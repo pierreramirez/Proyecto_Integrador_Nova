@@ -12,84 +12,97 @@
         <link rel="icon" href="../Imagenes/novas_logo.png">
 
         <style>
-            body{
-                background-color:#E6EEF5;
+            body {
+                background: url("../Imagenes/fondobus.jpg") no-repeat center center / cover;
+                position: relative;
+                min-height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                overflow-x: hidden;
             }
-            .box{
-                background:#FAF3E0;
-                padding:32px;
-                border-radius:12px;
+
+            /* Capa blur */
+            body::before {
+                content: "";
+                position: fixed;
+                inset: 0;
+                background: inherit;
+                filter: blur(7px) brightness(0.65);
+                z-index: -1;
+            }
+
+            /* === CONTENEDOR CENTRAL === */
+            .verify-wrapper{
+                min-height:100vh;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                padding:20px;
+            }
+
+            /* === TARJETA === */
+            .verify-box{
+                background: linear-gradient(176deg, #1a237e, #5b3b00);
+                padding:40px 32px;
+                border-radius:14px;
+                color: white;
                 box-shadow:0 6px 18px rgba(0,0,0,0.12);
                 width:100%;
-                max-width:720px;
+                max-width:520px;
+                text-align:center;
             }
-            .brand-logo{
+
+            /* === LOGO === */
+            .verify-logo{
                 width:100%;
-                height:auto;
-                max-width:420px;
+                max-width:260px;
+                margin:0 auto 15px auto;
                 display:block;
             }
-            @media (max-width:768px){
-                .brand-logo{
-                    max-width:220px;
-                }
-            }
-            @media (max-width:420px){
-                .brand-logo{
-                    max-width:160px;
-                }
-            }
+
+            /* === BOTÓN PERSONALIZADO === */
             .btn-primary-custom{
-                background:#f5be0a;
+                background: linear-gradient(90deg, #1a237e, #1a237e);
                 border:none;
                 color:#fff;
                 font-weight:600;
             }
-            .btn-primary-custom:hover{
-                background:#e6a800;
-            }
-            .center-vertical{
-                min-height:100vh;
-            }
-            @media (max-width:576px){
-                .center-vertical{
-                    padding-top:2rem;
-                    min-height:auto;
-                }
-            }
         </style>
     </head>
+
     <body>
-        <div class="container-fluid">
-            <div class="row align-items-center justify-content-center center-vertical gx-4">
-                <div class="col-12 col-md-5 d-flex justify-content-center mb-4 mb-md-0">
-                    <img src="../Imagenes/novas_logo.png" class="brand-logo" alt="logo">
-                </div>
 
-                <div class="col-12 col-md-7 d-flex justify-content-center">
-                    <div class="box">
-                        <h3 class="text-center mb-3">Verificar código</h3>
-                        <p>Hemos enviado un código de 6 dígitos a tu correo. Tiene validez 5 minutos.</p>
+        <div class="verify-wrapper">
+            <div class="verify-box">
 
-                        <form method="post" action="../srvIniciarSesion?accion=confirmarCodigo" id="codigoForm" novalidate>
-                            <div class="mb-3">
-                                <label class="form-label">Código (6 dígitos)</label>
-                                <input name="txtCodigo" type="text" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" class="form-control" required autofocus>
-                            </div>
-                            <div class="d-grid mb-2">
-                                <button class="btn btn-primary-custom w-100" type="submit">Verificar</button>
-                            </div>
+                <!-- LOGO -->
+                <img src="../Imagenes/novas_logo.png" class="verify-logo" alt="logo">
 
-                            <div class="d-flex justify-content-between">
-                                <a href="login.jsp" class="small-link">Volver al inicio</a>
+                <h3 class="mb-3">Verificar código</h3>
+                <p class="mb-4">Hemos enviado un código de 6 dígitos a tu correo.<br> Tiene validez 5 minutos.</p>
 
-                                <form method="post" action="../srvIniciarSesion?accion=reenviarCodigo" style="display:inline;">
-                                    <button type="submit" class="btn btn-link small-link p-0">Reenviar código</button>
-                                </form>
-                            </div>
+                <!-- FORMULARIO -->
+                <form method="post" action="../srvIniciarSesion?accion=confirmarCodigo" id="codigoForm" novalidate>
+
+                    <div class="mb-3 text-start">
+                        <label class="form-label">Código (6 dígitos)</label>
+                        <input name="txtCodigo" type="text" maxlength="6" pattern="[0-9]{6}"
+                               inputmode="numeric" autocomplete="one-time-code"
+                               class="form-control" required autofocus>
+                    </div>
+
+                    <button class="btn btn-primary-custom w-100 mb-3" type="submit">Verificar</button>
+
+                    <div class="d-flex justify-content-between small">
+                        <a href="login.jsp">Volver al inicio</a>
+
+                        <form method="post" action="../srvIniciarSesion?accion=reenviarCodigo" style="display:inline;">
+                            <button type="submit" class="btn btn-link p-0 small">Reenviar código</button>
                         </form>
                     </div>
-                </div>
+
+                </form>
             </div>
         </div>
 
@@ -108,8 +121,11 @@
                     const valor = input.value.trim();
                     if (!/^\d{6}$/.test(valor)) {
                         e.preventDefault();
-                        e.stopPropagation();
-                        Swal.fire({icon: 'warning', title: 'Código inválido', text: 'Ingresa un código de 6 dígitos (solo números).'});
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Código inválido',
+                            text: 'Ingresa un código de 6 dígitos (solo números).'
+                        });
                         return false;
                     }
                     input.value = valor;
@@ -117,5 +133,6 @@
                 });
             })();
         </script>
+
     </body>
 </html>

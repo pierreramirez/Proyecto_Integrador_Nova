@@ -34,7 +34,16 @@ body {
     line-height: 1.6;
     color: var(--text-dark);
     background-color: var(--bg-light);
+    display: flex;
+    flex-direction: column;
 }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
 
 .container {
     max-width: 1200px;
@@ -113,39 +122,47 @@ body {
 }
 /* Sección  */
 .hero {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    color: var(--text-white);
-    padding: 120px 0 80px;
+   background: url("../Imagenes/fondobus.jpg") center/cover no-repeat;
     position: relative;
+    padding: 80px 0;
+    margin-top: 90px;
     overflow: hidden;
+    color: var(--text-white);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
 }
 
+
 .hero::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('images/hero-bg.jpg') center/cover;
-    opacity: 0.1;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);  /* Oscurece la imagen */
+    backdrop-filter: blur(4px);       /* Difuminado PRO */
+    z-index: 0;
 }
+
 
 .hero-overlay {
     position: relative;
     z-index: 1;
 }
 
+
 .hero-content {
     text-align: center;
-    max-width: 800px;
-    margin: 0 auto;
+    margin: 0 auto;/* Ajusta según tu gusto */
 }
 
 .hero-title {
     font-size: 3.5rem;
     font-weight: 700;
-    margin-bottom: 1rem;
+    margin-bottom: 25px;
     line-height: 1.2;
 }
 
@@ -184,7 +201,7 @@ body {
     border-radius: var(--radius-lg);
     padding: 3rem;
     box-shadow: var(--shadow-lg);
-    margin-top: -100px;
+    margin-top: -30px;
     position: relative;
     z-index: 2;
 }
@@ -482,14 +499,15 @@ body {
 .footer {
     background: linear-gradient(135deg, var(--primary-dark), #000);
     color: var(--text-white);
-    padding: 60px 0 20px;
+    padding: 15px 0;
+    margin-top: auto;
 }
 
 .footer-content {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 3rem;
-    margin-bottom: 3rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
 }
 
 .footer-logo {
@@ -501,7 +519,7 @@ body {
 
 .footer-text {
     opacity: 0.8;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.8rem;
 }
 
 .social-links {
@@ -529,7 +547,7 @@ body {
 
 .footer-section h3 {
     color: var(--secondary-light);
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.8rem;
     font-size: 1.2rem;
 }
 
@@ -576,6 +594,17 @@ body {
 .footer-bottom p {
     margin-bottom: 0.5rem;
 }
+
+.section-subtitle-viajes {
+    color: #4d4d4d;
+    font-size: 35px;
+    text-align: center;
+    margin-top: 25px;
+    margin-bottom: 25px; /* SEPARA DEL CONTENIDO DE ABAJO */
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
 
 /* Responsive Design */
 @media (max-width: 768px) {

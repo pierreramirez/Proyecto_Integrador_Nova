@@ -17,101 +17,165 @@
         <link rel="icon" href="../Imagenes/novas_logo.png">
 
         <style>
+            /* === Fondo difuminado === */
             body {
-                background-color: #E6EEF5;
+                background: url("../Imagenes/fondobus.jpg") no-repeat center center / cover;
+                position: relative;
+                min-height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                overflow-x: hidden;
             }
 
-            /* Caja del formulario */
-            .login-box {
-                background-color: #FAF3E0;
-                padding: 28px;
-                border-radius: 12px;
-                box-shadow: 0 6px 18px rgba(0,0,0,0.12);
-                width: 100%;
-                max-width: 660px;
+            /* Capa blur */
+            body::before {
+                content: "";
+                position: fixed;
+                inset: 0;
+                background: inherit;
+                filter: blur(7px) brightness(0.65);
+                z-index: -1;
             }
 
-            /* Logo: controlamos tamaños en distintos breakpoints */
+            /* === Centrado del wrapper principal === */
+            .container {
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+            }
+
+            .login-wrapper {
+                width: 90%;
+                max-width: 980px;
+                margin: 0 auto;
+            }
+
+            /* === Tarjeta completa login estilo 50/50 === */
+            .login-card {
+                background-color: #ffffff; /* blanco */
+                backdrop-filter: blur(16px);
+                border-radius: 18px;
+                overflow: hidden;
+                box-shadow: 0 8px 28px rgba(0,0,0,0.25);
+                display: flex;
+                flex-wrap: wrap;
+            }
+
+            /* ======= Sección IZQUIERDA ======= */
+            .left-section {
+                flex: 1;
+                min-width: 320px;
+                padding: 45px 40px 45px 55px;
+            }
+
+            /* Logo centrado */
             .login-logo {
-                width: 100%;
-                height: auto;
+                max-width: 180px;
                 display: block;
-                max-width: 620px;     /* escritorio/tablet */
-            }
-            @media (max-width: 768px) {
-                .login-logo {
-                    max-width: 220px;
-                }   /* tablet/móvil grande */
-            }
-            @media (max-width: 420px) {
-                .login-logo {
-                    max-width: 160px;
-                }   /* móviles pequeños: evita que sea gigante */
+                margin: 0 auto 10px auto;
             }
 
-            /* Pequeños ajustes visuales */
+            /* Títulos */
+            .left-section h3 {
+                text-align: center;
+                margin-bottom: 22px;
+                font-weight: 600;
+            }
+
+            /* Inputs */
+            .form-control {
+                border-radius: 8px;
+                padding: 10px 12px;
+            }
+
+            /* Botón login */
             .btn-login {
-                background-color: #f5be0a;
+                background: linear-gradient(90deg, #1a237e, #1a237e);
                 border: none;
                 color: #fff;
                 font-weight: 600;
-            }
-            .btn-login:hover {
-                background-color: #e6a800;
+                border-radius: 10px;
+                transition: 0.25s ease;
             }
 
-            /* Aseguramos buena separación en vh-100 (centrado vertical) pero con padding extra arriba en móvil */
-            .center-vertical {
-                min-height: 100vh;
+            /* ======= Sección DERECHA ======= */
+            .right-section {
+                flex: 1;
+                min-width: 340px;
+                background: linear-gradient(145deg, #1a237e, #452800);
+                color: white;
+                font-family: "Inter", sans-serif;
+                padding: 80px 60px;
+                /* 👇 ESTO AGREGA EL CENTRADO SIN ROMPER EL TAMAÑO */
+                display: flex;
+                flex-direction: column;
+                justify-content: center;   /* centra vertical */
+                align-items: center;        /* centra horizontal */
+                text-align: center;         /* centra texto */
             }
-            @media (max-width: 576px) {
-                .center-vertical {
-                    padding-top: 3rem;
-                    padding-bottom: 3rem;
-                    min-height: auto;
+
+
+            .right-section h2 {
+                font-size: 52px;
+                font-weight: 700;
+                margin-bottom: 15px;
+            }
+
+            .right-section p {
+                font-size: 17px;
+                font-style: italic;
+                opacity: 0.92;
+            }
+
+
+            /* ======= RESPONSIVE ======= */
+            @media (max-width: 900px) {
+                .login-card {
+                    flex-direction: column;
+                }
+
+                .right-section {
+                    padding: 60px 35px;
+                    text-align: center;
+                }
+
+                .left-section {
+                    padding: 40px 30px;
                 }
             }
+
         </style>
     </head>
     <body>
         <div class="container">
-            <div class="row align-items-center justify-content-center center-vertical gx-4">
-                <!-- Logo arriba en móviles (order-1), en escritorio ocupa la columna izquierda (order-md-1) -->
-                <div class="col-12 col-md-5 d-flex justify-content-center mb-4 mb-md-0 order-1">
-                    <img src="../Imagenes/novas_logo.png" alt="NOVA'S TRAVELS" class="login-logo" onerror="this.src='../Imagenes/novas_logo.png'">
-                </div>
+            <div class="login-wrapper">
+                <div class="login-card">
 
-                <!-- Formulario: en móvil aparece debajo (order-2), en md+ derecha (order-md-2) -->
-                <div class="col-12 col-md-7 d-flex justify-content-center order-2">       
-                    <div class="login-box">
-                        <h3 class="text-center mb-3">Iniciar sesión</h3>
+                    <!-- SECCIÓN IZQUIERDA -->
+                    <div class="left-section">
+
+                        <img src="../Imagenes/novas_logo.png" 
+                             alt="NOVA'S TRAVELS" 
+                             class="login-logo">
+
+                        <h3>Iniciar sesión</h3>
 
                         <form method="post" action="../srvIniciarSesion?accion=verificar" id="loginForm" novalidate>
+
                             <div class="mb-3">
                                 <label for="username" class="form-label">Correo</label>
-                                <input type="email" id="username" name="txtCorreo" class="form-control" autocomplete="username" required>
+                                <input type="email" id="username" name="txtCorreo" class="form-control" required>
                             </div>
 
                             <div class="mb-3">
                                 <label for="password" class="form-label">Contraseña</label>
-                                <input type="password" id="password" name="txtPassword" class="form-control" autocomplete="current-password" required>
+                                <input type="password" id="password" name="txtPassword" class="form-control" required>
                             </div>
 
                             <div class="d-grid mb-3">
                                 <button class="btn btn-login btn-lg" type="submit">Inicia Sesión</button>
                             </div>
-
-                            <% String codigo = (String) session.getAttribute("codigo2FA");
-                                Long expira = (Long) session.getAttribute("codigoExpira");
-                                if (codigo != null && expira != null) {
-                                    long remSeg = (expira - System.currentTimeMillis()) / 1000;
-                                    if (remSeg < 0)
-                                        remSeg = 0;
-                            %>
-                            <div class="mb-3">
-                                <a href="verificarCodigo.jsp" class="btn btn-outline-primary w-100">Ingresar código — tiempo restante: <%= remSeg%> s</a>
-                            </div>
-                            <% }%>
 
                             <div class="d-flex justify-content-between small">
                                 <a href="registro.jsp">¿No tienes cuenta? Registrarse</a>
@@ -119,10 +183,18 @@
                             </div>
                         </form>
                     </div>
+
+                    <!-- SECCIÓN DERECHA -->
+                    <div class="right-section">
+                        <h2>¡BIENVENIDO!</h2>
+                        <p>
+                            Gracias por utilizar nuestro sistema de transporte.<br>
+                            Inicia sesión para continuar gestionando tus viajes.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
-
         <!-- Scripts -->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 

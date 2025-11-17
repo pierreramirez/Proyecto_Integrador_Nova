@@ -4,10 +4,25 @@
 </div> <!-- cierra row -->
 </div> <!-- cierra container-fluid -->
 
-<footer class="site-footer mt-4 text-center">
-    <hr/>
-    <p>&copy; 2025 NOVA'S TRAVELS - Todos los derechos reservados</p>
-</footer>
+<body class="d-flex flex-column min-vh-100">
+
+    <header>
+        <!-- tu header -->
+    </header>
+
+    <div class="container-fluid flex-fill">
+        <main class="main-content flex-fill">
+            <!-- contenido dinámico -->
+        </main>
+    </div>
+
+    <footer class="site-footer mt-auto text-center">
+        <p>&copy; 2025 NOVA'S TRAVELS - Todos los derechos reservados</p>
+    </footer>
+
+    <!-- tus scripts -->
+</body>
+
 
 <!-- Scripts al final para mejor carga -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

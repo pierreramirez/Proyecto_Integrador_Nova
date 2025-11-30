@@ -6,7 +6,6 @@
 <html lang="es">
     <head>
         <meta charset="UTF-8">
-
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/novas-landing.css">
         <link rel="stylesheet"
               href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
@@ -19,12 +18,11 @@
         <div class="container" style="padding:28px 12px;">
             <div class="section-header" style="text-align:center; margin-bottom:18px;">
                 <h1 style="font-size:34px; color:#1d3aa0;">
-                    Viajes a: <c:out value="${lugar != null ? lugar.nombre : 'Destino'}"/>
+                    Viajes a: <c:out value="${lugar.nombre}" default="Destino"/>
                 </h1>
                 <p class="section-subtitle-viajes">
                     Selecciona el viaje que prefieras
                 </p>
-
             </div>
 
             <!-- SI NO HAY VIAJES -->
@@ -43,11 +41,9 @@
             <c:if test="${not empty viajes}">
                 <div class="viajes-grid"
                      style="display:grid; grid-template-columns: repeat(auto-fill,minmax(320px,1fr)); gap:18px;">
-
                     <c:forEach var="v" items="${viajes}">
                         <div class="card viaje-card"
                              style="background:#fff; border-radius:10px; box-shadow:0 6px 18px rgba(20,30,60,0.06); padding:14px;">
-
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <div>
                                     <h3 style="margin:0; color:#243a8b;">
@@ -97,10 +93,8 @@
                                     </a>
                                 </div>
                             </div>
-
                         </div>
                     </c:forEach>
-
                 </div>
             </c:if>
 
@@ -109,4 +103,3 @@
         <jsp:include page="../componentes/public/footer.jsp" />
     </body>
 </html>
-

@@ -15,6 +15,8 @@ import javax.mail.MessagingException;
  */
 public class srvIniciarSesion extends HttpServlet {
 
+    private static final long serialVersionUID = 1L;
+
     protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // Forzar UTF-8
         request.setCharacterEncoding("UTF-8");
@@ -30,6 +32,9 @@ public class srvIniciarSesion extends HttpServlet {
                         break;
                     case "confirmarCodigo":
                         ConfirmarCodigo(request, response);
+                        break;
+                    case "reenviarCodigo":
+                        ReenviarCodigo(request, response);
                         break;
                     case "registrar":
                         Registrar(request, response);
@@ -47,14 +52,14 @@ public class srvIniciarSesion extends HttpServlet {
                         CambiarPassword(request, response);
                         break;
                     default:
-                        response.sendRedirect("Vista/login.jsp");
+                        response.sendRedirect(request.getContextPath() + "/Vista/login.jsp");
                 }
             } else {
-                response.sendRedirect("Vista/login.jsp");
+                response.sendRedirect(request.getContextPath() + "/Vista/login.jsp");
             }
         } catch (Exception ex) {
             ex.printStackTrace();
-            response.sendRedirect("Vista/login.jsp?error=ex");
+            response.sendRedirect(request.getContextPath() + "/Vista/login.jsp?error=ex");
         }
     }
 
@@ -67,7 +72,7 @@ public class srvIniciarSesion extends HttpServlet {
             String contra = request.getParameter("txtPassword");
 
             if (correo == null || correo.trim().isEmpty() || contra == null) {
-                response.sendRedirect("Vista/login.jsp?error=cred");
+                response.sendRedirect(request.getContextPath() + "/Vista/login.jsp?error=cred");
                 return;
             }
 
@@ -76,7 +81,7 @@ public class srvIniciarSesion extends HttpServlet {
 
             if (user == null) {
                 System.out.println("DEBUG: getUserByEmail devolvió NULL para email=" + correo);
-                response.sendRedirect("Vista/login.jsp?error=cred");
+                response.sendRedirect(request.getContextPath() + "/Vista/login.jsp?error=cred");
                 return;
             } else {
                 System.out.println("DEBUG: usuario encontrado email=" + user.getEmail() + " rol=" + user.getRol() + " hashExists=" + (user.getContra() != null));
@@ -95,18 +100,57 @@ public class srvIniciarSesion extends HttpServlet {
                     EmailUtil.enviarCodigoVerificacion(user.getEmail(), codigo);
                 } catch (MessagingException me) {
                     me.printStackTrace();
-                    response.sendRedirect("Vista/login.jsp?error=mail");
+                    response.sendRedirect(request.getContextPath() + "/Vista/login.jsp?error=mail");
                     return;
                 }
 
-                response.sendRedirect("Vista/verificarCodigo.jsp");
+                response.sendRedirect(request.getContextPath() + "/Vista/verificarCodigo.jsp");
             } else {
                 System.out.println("DEBUG: BCrypt.checkpw returned FALSE para email=" + correo);
-                response.sendRedirect("Vista/login.jsp?error=cred");
+                response.sendRedirect(request.getContextPath() + "/Vista/login.jsp?error=cred");
             }
         } catch (Exception ex) {
             ex.printStackTrace();
-            response.sendRedirect("Vista/login.jsp?error=ex");
+            response.sendRedirect(request.getContextPath() + "/Vista/login.jsp?error=ex");
+        }
+    }
+
+    /**
+     * Reenviar el código 2FA (usado desde verificarCodigo.jsp). Solo funciona
+     * si hay userTemp en la sesión (es decir: pasó la verificación de
+     * credenciales).
+     */
+    private void ReenviarCodigo(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        try {
+            HttpSession ses = request.getSession(false);
+            if (ses == null) {
+                response.sendRedirect(request.getContextPath() + "/Vista/login.jsp?error=sess");
+                return;
+            }
+            DTOUsuario userTemp = (DTOUsuario) ses.getAttribute("userTemp");
+            if (userTemp == null) {
+                response.sendRedirect(request.getContextPath() + "/Vista/login.jsp?error=sess");
+                return;
+            }
+
+            String codigo = String.format("%06d", (int) (Math.random() * 900000) + 100000);
+            ses.setAttribute("codigo2FA", codigo);
+            long expiracion = System.currentTimeMillis() + (5 * 60 * 1000); // 5 minutos desde ahora
+            ses.setAttribute("codigoExpira", expiracion);
+
+            try {
+                EmailUtil.enviarCodigoVerificacion(userTemp.getEmail(), codigo);
+            } catch (MessagingException me) {
+                me.printStackTrace();
+                response.sendRedirect(request.getContextPath() + "/Vista/verificarCodigo.jsp?error=mail");
+                return;
+            }
+
+            // redirige de nuevo a la página de verificación (sin error)
+            response.sendRedirect(request.getContextPath() + "/Vista/verificarCodigo.jsp");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/Vista/login.jsp?error=ex");
         }
     }
 
@@ -119,7 +163,7 @@ public class srvIniciarSesion extends HttpServlet {
             String codigoEnviado = request.getParameter("txtCodigo");
             HttpSession ses = request.getSession(false);
             if (ses == null) {
-                response.sendRedirect("Vista/login.jsp");
+                response.sendRedirect(request.getContextPath() + "/Vista/login.jsp");
                 return;
             }
 
@@ -142,7 +186,7 @@ public class srvIniciarSesion extends HttpServlet {
             if (codigoCorrecto != null && expira > 0 && System.currentTimeMillis() <= expira && codigoCorrecto.equals(codigoEnviado)) {
                 DTOUsuario user = (DTOUsuario) ses.getAttribute("userTemp");
                 if (user == null) {
-                    response.sendRedirect("Vista/login.jsp");
+                    response.sendRedirect(request.getContextPath() + "/Vista/login.jsp");
                     return;
                 }
 
@@ -156,24 +200,25 @@ public class srvIniciarSesion extends HttpServlet {
                 ses.removeAttribute("codigoExpira");
                 ses.removeAttribute("userTemp");
 
-                // redirigir según rol
+                // redirigir según rol (usar contextPath y la nueva página index_logeado.jsp)
                 int rol = user.getRol();
+                String ctx = request.getContextPath();
                 if (rol == 1) {
-                    response.sendRedirect("Vista/Administrador/index.jsp");
+                    response.sendRedirect(ctx + "/Vista/Administrador/index.jsp");
                 } else if (rol == 2) {
-                    response.sendRedirect("Vista/Empleado/index.jsp");
+                    response.sendRedirect(ctx + "/Vista/Empleado/index.jsp");
                 } else if (rol == 3) {
-                    response.sendRedirect("Vista/Cliente/index.jsp");
+                    response.sendRedirect(ctx + "/Vista/Cliente/index_logeado.jsp");
                 } else {
                     System.out.println("DEBUG: rol inesperado (" + rol + "), redirigiendo a login");
-                    response.sendRedirect("Vista/login.jsp?error=rol");
+                    response.sendRedirect(ctx + "/Vista/login.jsp?error=rol");
                 }
             } else {
-                response.sendRedirect("Vista/verificarCodigo.jsp?error=cod");
+                response.sendRedirect(request.getContextPath() + "/Vista/verificarCodigo.jsp?error=cod");
             }
         } catch (Exception ex) {
             ex.printStackTrace();
-            response.sendRedirect("Vista/login.jsp?error=ex2");
+            response.sendRedirect(request.getContextPath() + "/Vista/login.jsp?error=ex2");
         }
     }
 
@@ -190,7 +235,7 @@ public class srvIniciarSesion extends HttpServlet {
             String pass = request.getParameter("password");
 
             if (appat == null || nombre == null || dniStr == null || email == null || pass == null) {
-                response.sendRedirect("Vista/registro.jsp?error=missing");
+                response.sendRedirect(request.getContextPath() + "/Vista/registro.jsp?error=missing");
                 return;
             }
 
@@ -218,13 +263,13 @@ public class srvIniciarSesion extends HttpServlet {
             boolean ok = dao.insertarUsuario(u, creadorId);
 
             if (ok) {
-                response.sendRedirect("Vista/login.jsp?registro=ok");
+                response.sendRedirect(request.getContextPath() + "/Vista/login.jsp?registro=ok");
             } else {
-                response.sendRedirect("Vista/registro.jsp?error=bd");
+                response.sendRedirect(request.getContextPath() + "/Vista/registro.jsp?error=bd");
             }
         } catch (Exception ex) {
             ex.printStackTrace();
-            response.sendRedirect("Vista/registro.jsp?error=ex");
+            response.sendRedirect(request.getContextPath() + "/Vista/registro.jsp?error=ex");
         }
     }
 
@@ -237,7 +282,7 @@ public class srvIniciarSesion extends HttpServlet {
             if (sesion != null) {
                 sesion.invalidate();
             }
-            response.sendRedirect("Vista/login.jsp");
+            response.sendRedirect(request.getContextPath() + "/Vista/login.jsp");
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -251,14 +296,14 @@ public class srvIniciarSesion extends HttpServlet {
         try {
             String correo = request.getParameter("txtCorreoRecup");
             if (correo == null || correo.trim().isEmpty()) {
-                response.sendRedirect("Vista/recuperar.jsp?error=missing");
+                response.sendRedirect(request.getContextPath() + "/Vista/recuperar.jsp?error=missing");
                 return;
             }
 
             DAOUsuarios dao = new DAOUsuarios();
             DTOUsuario user = dao.getUserByEmail(correo);
             if (user == null) {
-                response.sendRedirect("Vista/recuperar.jsp?error=noexist");
+                response.sendRedirect(request.getContextPath() + "/Vista/recuperar.jsp?error=noexist");
                 return;
             }
 
@@ -273,14 +318,14 @@ public class srvIniciarSesion extends HttpServlet {
                 EmailUtil.enviarCodigoVerificacion(correo, codigo);
             } catch (MessagingException me) {
                 me.printStackTrace();
-                response.sendRedirect("Vista/recuperar.jsp?error=mail");
+                response.sendRedirect(request.getContextPath() + "/Vista/recuperar.jsp?error=mail");
                 return;
             }
 
-            response.sendRedirect("Vista/recuperarCodigo.jsp");
+            response.sendRedirect(request.getContextPath() + "/Vista/recuperarCodigo.jsp");
         } catch (Exception ex) {
             ex.printStackTrace();
-            response.sendRedirect("Vista/recuperar.jsp?error=ex");
+            response.sendRedirect(request.getContextPath() + "/Vista/recuperar.jsp?error=ex");
         }
     }
 
@@ -292,7 +337,7 @@ public class srvIniciarSesion extends HttpServlet {
             String codigoIngresado = request.getParameter("txtCodigoRecup");
             HttpSession ses = request.getSession(false);
             if (ses == null) {
-                response.sendRedirect("Vista/recuperar.jsp");
+                response.sendRedirect(request.getContextPath() + "/Vista/recuperar.jsp");
                 return;
             }
 
@@ -326,13 +371,13 @@ public class srvIniciarSesion extends HttpServlet {
                 ses.removeAttribute("recupCodigo");
                 ses.removeAttribute("recupExpira");
                 ses.removeAttribute("recupIntentos");
-                response.sendRedirect("Vista/recuperar.jsp?error=exp");
+                response.sendRedirect(request.getContextPath() + "/Vista/recuperar.jsp?error=exp");
                 return;
             }
 
             if (codigoCorrecto != null && codigoCorrecto.equals(codigoIngresado)) {
                 // permitir cambiar password
-                response.sendRedirect("Vista/cambiarPassword.jsp");
+                response.sendRedirect(request.getContextPath() + "/Vista/cambiarPassword.jsp");
             } else {
                 intentos++;
                 ses.setAttribute("recupIntentos", intentos);
@@ -341,14 +386,14 @@ public class srvIniciarSesion extends HttpServlet {
                     ses.removeAttribute("recupCodigo");
                     ses.removeAttribute("recupExpira");
                     ses.removeAttribute("recupIntentos");
-                    response.sendRedirect("Vista/recuperar.jsp?error=blocked");
+                    response.sendRedirect(request.getContextPath() + "/Vista/recuperar.jsp?error=blocked");
                 } else {
-                    response.sendRedirect("Vista/recuperarCodigo.jsp?error=cod");
+                    response.sendRedirect(request.getContextPath() + "/Vista/recuperarCodigo.jsp?error=cod");
                 }
             }
         } catch (Exception ex) {
             ex.printStackTrace();
-            response.sendRedirect("Vista/recuperar.jsp?error=ex");
+            response.sendRedirect(request.getContextPath() + "/Vista/recuperar.jsp?error=ex");
         }
     }
 
@@ -362,23 +407,23 @@ public class srvIniciarSesion extends HttpServlet {
             String pass2 = request.getParameter("password2");
 
             if (pass1 == null || pass2 == null || !pass1.equals(pass2)) {
-                response.sendRedirect("Vista/cambiarPassword.jsp?error=match");
+                response.sendRedirect(request.getContextPath() + "/Vista/cambiarPassword.jsp?error=match");
                 return;
             }
             if (pass1.length() < 6) {
-                response.sendRedirect("Vista/cambiarPassword.jsp?error=short");
+                response.sendRedirect(request.getContextPath() + "/Vista/cambiarPassword.jsp?error=short");
                 return;
             }
 
             HttpSession ses = request.getSession(false);
             if (ses == null) {
-                response.sendRedirect("Vista/recuperar.jsp");
+                response.sendRedirect(request.getContextPath() + "/Vista/recuperar.jsp");
                 return;
             }
             Object oCorreo = ses.getAttribute("recupEmail");
             String correo = oCorreo != null ? oCorreo.toString() : null;
             if (correo == null) {
-                response.sendRedirect("Vista/recuperar.jsp");
+                response.sendRedirect(request.getContextPath() + "/Vista/recuperar.jsp");
                 return;
             }
 
@@ -391,13 +436,13 @@ public class srvIniciarSesion extends HttpServlet {
                 ses.removeAttribute("recupExpira");
                 ses.removeAttribute("recupEmail");
                 ses.removeAttribute("recupIntentos");
-                response.sendRedirect("Vista/login.jsp?recup=ok");
+                response.sendRedirect(request.getContextPath() + "/Vista/login.jsp?recup=ok");
             } else {
-                response.sendRedirect("Vista/cambiarPassword.jsp?error=bd");
+                response.sendRedirect(request.getContextPath() + "/Vista/cambiarPassword.jsp?error=bd");
             }
         } catch (Exception ex) {
             ex.printStackTrace();
-            response.sendRedirect("Vista/cambiarPassword.jsp?error=ex");
+            response.sendRedirect(request.getContextPath() + "/Vista/cambiarPassword.jsp?error=ex");
         }
     }
 

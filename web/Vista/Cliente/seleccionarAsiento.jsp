@@ -1,8 +1,127 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="java.util.List, Modelo.DTOAsientoViaje" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<jsp:include page="/Vista/componentes/header.jsp" />
+<jsp:include page="../componentes/public/header.jsp" />
+<style>
+    body {
+        background: #eef3f9;
+        margin: 0;
+        padding: 0;
+    }
 
+    .bus-container {
+        width: 500px;
+        margin: 120px auto;
+        background: white;
+        padding: 25px;
+        border-radius: 25px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        text-align: center;
+    }
+
+    .title-box {
+        background: #0a1a77;
+        color: white;
+        padding: 16px;
+        font-size: 22px;
+        font-weight: bold;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+
+    /* Leyenda */
+    .legend {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-bottom: 15px;
+        font-size: 14px;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .legend-box {
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+    }
+
+    .legend-free {
+        background: #1b74c9;
+    }
+    .legend-taken {
+        background: #bcbcbc;
+    }
+
+    /* Asiento del conductor */
+    .driver-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 40px 1fr 1fr;
+        margin-bottom: 20px;
+    }
+
+    .driver-seat {
+        width: 80px;
+        height: 50px;
+        background: #d97706;
+        border-radius: 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-size: 26px;
+        grid-column: 1;
+    }
+
+    .seats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 40px 1fr 1fr;
+        gap: 12px;
+        justify-content: center;
+        padding: 10px 0;
+    }
+
+    .seat {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 45px;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        text-decoration: none;
+        transition: 0.15s;
+    }
+
+    .seat-free {
+        background: #1b74c9;
+        color: white;
+    }
+
+    .seat-free:hover {
+        transform: scale(1.07);
+    }
+
+    .seat-taken {
+        background: #bcbcbc;
+        color: #555;
+        cursor: not-allowed;
+    }
+
+    .aisle {
+        background: transparent;
+    }
+
+    .seat-label {
+        margin-top: 15px;
+        color: #777;
+        font-size: 14px;
+    }
+</style>
 <%
     List<DTOAsientoViaje> asientos = (List<DTOAsientoViaje>) request.getAttribute("asientos");
     Integer idViaje = (Integer) request.getAttribute("idViaje");
@@ -49,31 +168,4 @@
     });
 </script>
 
-<style>
-    .seat {
-        width:56px;
-        height:56px;
-        border-radius:8px;
-        border:none;
-        font-weight:bold;
-        cursor:pointer;
-    }
-    .available {
-        background:#2ecc71;
-        color:#fff;
-    }
-    .reserved {
-        background:#f1c40f;
-        color:#fff;
-    }
-    .occupied {
-        background:#95a5a6;
-        color:#fff;
-    }
-    .selected {
-        outline:3px solid #ff8c00;
-        transform:scale(1.04);
-    }
-</style>
-
-<jsp:include page="/Vista/componentes/footer.jsp" />
+<jsp:include page="../componentes/public/footer.jsp" />

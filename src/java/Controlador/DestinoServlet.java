@@ -22,11 +22,18 @@ public class DestinoServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        // aceptar varios nombres de parámetro por compatibilidad (destinoId, destino, id)
         String sDestino = req.getParameter("destinoId");
-        System.out.println("DestinoServlet: parametro destinoId = " + sDestino);
+        if (sDestino == null) {
+            sDestino = req.getParameter("destino");
+        }
+        if (sDestino == null) {
+            sDestino = req.getParameter("id");
+        }
+
+        System.out.println("DestinoServlet: parametro destino recibido = " + sDestino);
 
         if (sDestino == null || sDestino.trim().isEmpty()) {
-            // Parámetro ausente -> redirigir al índice o mostrar mensaje
             resp.sendRedirect(req.getContextPath() + "/");
             return;
         }
@@ -48,30 +55,21 @@ public class DestinoServlet extends HttpServlet {
                 for (DTOViaje v : viajes) {
                     try {
                         int disp = daoAsiento.contarDisponibles(v.getIdViaje());
-                        System.out.println("Viaje " + v.getIdViaje() + " disponibles = " + disp);
                         v.setDisponibles(disp);
                     } catch (Exception e) {
-                        // no abortar todo si falla contarDisponibles para un viaje
                         System.err.println("Error contando asientos para viaje " + v.getIdViaje() + ": " + e.getMessage());
                         v.setDisponibles(0);
                     }
                 }
             }
 
-            DTOLugar lugar = null;
-            try {
-                lugar = daoLugar.obtenerPorId(destinoId);
-            } catch (Exception e) {
-                System.err.println("Error obteniendo lugar id=" + destinoId + ": " + e.getMessage());
-            }
+            DTOLugar lugar = daoLugar.obtenerPorId(destinoId);
 
-            // Si quieres ver errores en la página durante desarrollo:
             req.setAttribute("viajes", viajes);
             req.setAttribute("lugar", lugar);
             req.getRequestDispatcher("/Vista/Cliente/viajes_destino.jsp").forward(req, resp);
 
         } catch (Exception e) {
-            // loguear y devolver una respuesta de error para debug
             e.printStackTrace();
             resp.setContentType("text/html;charset=UTF-8");
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

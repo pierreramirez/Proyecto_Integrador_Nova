@@ -3,7 +3,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ page import="java.time.*, java.time.format.*" %>
 
-<jsp:include page="/Vista/componentes/header.jsp" />
+<jsp:include page="../componentes/public/header.jsp" />
 
 <link href="${pageContext.request.contextPath}/css/novas-landing.css" rel="stylesheet" />
 
@@ -348,4 +348,4 @@
     loadPricesIfNeeded();
 </script>
 
-<jsp:include page="/Vista/componentes/footer.jsp" />
+<jsp:include page="../componentes/public/footer.jsp" />

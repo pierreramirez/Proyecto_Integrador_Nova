@@ -9,11 +9,11 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <link rel="icon" href="../Imagenes/novas_logo.png">
+        <link rel="icon" href="${pageContext.request.contextPath}/Imagenes/novas_logo.png">
 
         <style>
             body {
-                background: url("../Imagenes/fondobus.jpg") no-repeat center center / cover;
+                background: url("${pageContext.request.contextPath}/Imagenes/fondobus.jpg") no-repeat center center / cover;
                 position: relative;
                 min-height: 100vh;
                 display: flex;
@@ -77,13 +77,13 @@
             <div class="verify-box">
 
                 <!-- LOGO -->
-                <img src="../Imagenes/novas_logo.png" class="verify-logo" alt="logo">
+                <img src="${pageContext.request.contextPath}/Imagenes/novas_logo.png" class="verify-logo" alt="logo">
 
                 <h3 class="mb-3">Verificar código</h3>
                 <p class="mb-4">Hemos enviado un código de 6 dígitos a tu correo.<br> Tiene validez 5 minutos.</p>
 
-                <!-- FORMULARIO -->
-                <form method="post" action="../srvIniciarSesion?accion=confirmarCodigo" id="codigoForm" novalidate>
+                <!-- FORMULARIO: usa contextPath para evitar rutas relativas -->
+                <form method="post" action="${pageContext.request.contextPath}/srvIniciarSesion?accion=confirmarCodigo" id="codigoForm" novalidate>
 
                     <div class="mb-3 text-start">
                         <label class="form-label">Código (6 dígitos)</label>
@@ -95,9 +95,9 @@
                     <button class="btn btn-primary-custom w-100 mb-3" type="submit">Verificar</button>
 
                     <div class="d-flex justify-content-between small">
-                        <a href="login.jsp">Volver al inicio</a>
+                        <a href="${pageContext.request.contextPath}/Vista/login.jsp">Volver al inicio</a>
 
-                        <form method="post" action="../srvIniciarSesion?accion=reenviarCodigo" style="display:inline;">
+                        <form method="post" action="${pageContext.request.contextPath}/srvIniciarSesion?accion=reenviarCodigo" style="display:inline;">
                             <button type="submit" class="btn btn-link p-0 small">Reenviar código</button>
                         </form>
                     </div>
@@ -114,23 +114,27 @@
                     Swal.fire({icon: 'error', title: 'Código inválido', text: 'Código incorrecto o expirado.'});
                 else if (err === 'mail')
                     Swal.fire({icon: 'error', title: 'Error envío', text: 'No se pudo enviar el correo. Intenta luego.'});
+                else if (err === 'sess')
+                    Swal.fire({icon: 'warning', title: 'Sesión expirada', text: 'Por seguridad inicia sesión nuevamente.'});
 
                 const form = document.getElementById('codigoForm');
-                form.addEventListener('submit', function (e) {
-                    const input = form.querySelector('input[name="txtCodigo"]');
-                    const valor = input.value.trim();
-                    if (!/^\d{6}$/.test(valor)) {
-                        e.preventDefault();
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Código inválido',
-                            text: 'Ingresa un código de 6 dígitos (solo números).'
-                        });
-                        return false;
-                    }
-                    input.value = valor;
-                    return true;
-                });
+                if (form) {
+                    form.addEventListener('submit', function (e) {
+                        const input = form.querySelector('input[name="txtCodigo"]');
+                        const valor = input.value.trim();
+                        if (!/^\d{6}$/.test(valor)) {
+                            e.preventDefault();
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Código inválido',
+                                text: 'Ingresa un código de 6 dígitos (solo números).'
+                            });
+                            return false;
+                        }
+                        input.value = valor;
+                        return true;
+                    });
+                }
             })();
         </script>
 

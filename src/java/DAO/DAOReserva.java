@@ -2,35 +2,42 @@ package DAO;
 
 import Persistencia.Conexion;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.sql.SQLException;
 
+/**
+ * DAOReserva: crea reservas de forma transaccional asegurando que el asiento
+ * esté disponible (SELECT ... FOR UPDATE) y devolviendo el id generado.
+ */
 public class DAOReserva {
-
-    private final Conexion cn = new Conexion();
 
     /**
      * Crea una reserva para el asiento indicado. Retorna idReserva (>0) si se
      * creó, 0 si asiento no estaba disponible.
-     *
-     * Flujo: - SELECT estado FROM asiento_viaje WHERE idAsientoViaje = ? FOR
-     * UPDATE - Si estado == 0 -> INSERT INTO reserva(...) RETURN_GENERATED_KEYS
-     * - UPDATE asiento_viaje SET estado = 1 WHERE idAsientoViaje = ? - commit
      */
     public int crearReserva(int idViaje, int idAsientoViaje, int idCliente) throws SQLException {
-        Connection con = cn.getConnection();
+        Connection con = null;
         PreparedStatement psSelect = null;
         PreparedStatement psInsert = null;
         PreparedStatement psUpdate = null;
         ResultSet rs = null;
         ResultSet rsKeys = null;
-        boolean originalAutoCommit = true;
+
         try {
-            originalAutoCommit = con.getAutoCommit();
+            Conexion cx = new Conexion();
+            con = cx.getConnection();
+            if (con == null) {
+                throw new SQLException("Conexion nula en DAOReserva");
+            }
+
             con.setAutoCommit(false);
 
-            // 1) verificar el estado actual del asiento con lock
-            String sqlCheck = "SELECT estado FROM asiento_viaje WHERE idAsientoViaje = ? FOR UPDATE";
-            psSelect = con.prepareStatement(sqlCheck);
+            // 1) bloquear fila del asiento
+            String sqlSelect = "SELECT estado FROM asiento_viaje WHERE idAsientoViaje = ? FOR UPDATE";
+            psSelect = con.prepareStatement(sqlSelect);
             psSelect.setInt(1, idAsientoViaje);
             rs = psSelect.executeQuery();
             if (!rs.next()) {
@@ -49,12 +56,21 @@ public class DAOReserva {
             psInsert.setInt(1, idViaje);
             psInsert.setInt(2, idAsientoViaje);
             psInsert.setInt(3, idCliente);
-            psInsert.setInt(4, 1); // 1 = reservado (ajusta segun tu lógica)
-            psInsert.executeUpdate();
+            psInsert.setString(4, "PENDIENTE");
+            int affected = psInsert.executeUpdate();
+
+            if (affected == 0) {
+                con.rollback();
+                return 0;
+            }
+
             rsKeys = psInsert.getGeneratedKeys();
             int idReserva = 0;
             if (rsKeys.next()) {
                 idReserva = rsKeys.getInt(1);
+            } else {
+                con.rollback();
+                return 0;
             }
 
             // 3) actualizar estado del asiento a '1' reservado
@@ -63,52 +79,55 @@ public class DAOReserva {
             psUpdate.setInt(1, idAsientoViaje);
             psUpdate.executeUpdate();
 
+            // 4) commit
             con.commit();
             return idReserva;
+
         } catch (SQLException ex) {
-            try {
-                if (con != null) {
+            if (con != null) {
+                try {
                     con.rollback();
+                } catch (SQLException ignore) {
                 }
-            } catch (SQLException ignore) {
             }
             throw ex;
         } finally {
             try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ignore) {
-            }
-            try {
                 if (rsKeys != null) {
                     rsKeys.close();
                 }
-            } catch (SQLException ignore) {
+            } catch (Exception ignore) {
+            }
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (Exception ignore) {
             }
             try {
                 if (psSelect != null) {
                     psSelect.close();
                 }
-            } catch (SQLException ignore) {
+            } catch (Exception ignore) {
             }
             try {
                 if (psInsert != null) {
                     psInsert.close();
                 }
-            } catch (SQLException ignore) {
+            } catch (Exception ignore) {
             }
             try {
                 if (psUpdate != null) {
                     psUpdate.close();
                 }
-            } catch (SQLException ignore) {
+            } catch (Exception ignore) {
             }
             try {
                 if (con != null) {
-                    con.setAutoCommit(originalAutoCommit);
+                    con.setAutoCommit(true);
+                    con.close();
                 }
-            } catch (SQLException ignore) {
+            } catch (Exception ignore) {
             }
         }
     }

@@ -104,7 +104,7 @@
                     <div class="badge-status">RESERVA PAGADA</div>
                     <div style="margin-top:8px;"><small class="muted">Número(s) de reserva</small></div>
 
-                    <!-- Mostrar código de reserva si viene -->
+                    <!-- Mostrar código de reserva si viene como atributo (servidor) o param (URL) -->
                     <div style="font-size:18px; font-weight:800; margin-top:6px;" id="reservationsText">
                         <c:choose>
                             <c:when test="${not empty codigoReserva}">
@@ -123,7 +123,7 @@
                                 <c:out value="${param.asientoId}" />
                             </c:when>
                             <c:otherwise>
-                                (ID no disponible)
+                                2982-KJ
                             </c:otherwise>
                         </c:choose>
                     </div>
@@ -182,7 +182,7 @@
                             </c:forEach>
                         </c:if>
 
-                        <!-- fallback: usar param.asientoId(s) si no hubo forward -->
+                        <!-- fallback: usar param.asientoIds si no hubo forward -->
                         <c:if test="${empty reservedIds && not empty param.asientoIds}">
                             <c:forEach var="x" items="${fn:split(param.asientoIds, ',')}">
                                 <div class="seat-pill"><c:out value="${fn:trim(x)}" /></div>
@@ -210,20 +210,51 @@
                 <div style="display:flex; justify-content:space-between; margin-top:8px;">
                     <div class="muted">Subtotal</div>
                     <div id="subtotal" class="value">
-                        <c:out value="${subtotal != null ? 'S/ ' + subtotal : 'S/ 0.00'}" />
+                        <!-- Prefer server attributes, si no usar params, si no mostrar 0.00 -->
+                        <c:choose>
+                            <c:when test="${not empty subtotal}">
+                                <c:out value="${'S/ ' + subtotal}" />
+                            </c:when>
+                            <c:when test="${not empty param.amount}">
+                                S/ <c:out value="${param.amount}" />
+                            </c:when>
+                            <c:otherwise>
+                                S/ 0.00
+                            </c:otherwise>
+                        </c:choose>
                     </div>
                 </div>
                 <div style="display:flex; justify-content:space-between; margin-top:6px;">
                     <div class="muted">Comisión</div>
                     <div id="comision" class="value">
-                        <c:out value="${comision != null ? 'S/ ' + comision : 'S/ 0.00'}" />
+                        <c:choose>
+                            <c:when test="${not empty comision}">
+                                <c:out value="${'S/ ' + comision}" />
+                            </c:when>
+                            <c:when test="${not empty param.comision}">
+                                S/ <c:out value="${param.comision}" />
+                            </c:when>
+                            <c:otherwise>
+                                S/ 0.00
+                            </c:otherwise>
+                        </c:choose>
                     </div>
                 </div>
                 <hr style="margin:12px 0; border:none; border-top:1px solid #eef2f6;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div class="muted">Total</div>
                     <div id="total" class="total">
-                        <c:out value="${total != null ? 'S/ ' + total : 'S/ 0.00'}" />
+                        <c:choose>
+                            <c:when test="${not empty total}">
+                                <c:out value="${'S/ ' + total}" />
+                            </c:when>
+                            <c:when test="${not empty param.total}">
+                                S/ <c:out value="${param.total}" />
+                            </c:when>
+                            <c:otherwise>
+                                S/ 0.00
+                            </c:otherwise>
+                        </c:choose>
                     </div>
                 </div>
 
@@ -243,109 +274,164 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
-    // Valores seguros inyectados desde servidor (atributos o params)
-    const CTX = '<c:out value="${pageContext.request.contextPath}" />';
+    document.addEventListener('DOMContentLoaded', function () {
+        // Valores seguros inyectados desde servidor (atributos o params)
+        const CTX = '<c:out value="${pageContext.request.contextPath}" />';
 
-    // reserved: prefer attribute reservedIds (forward) else params
-    let reserved = [];
-    (function initReserved() {
-        // If server forwarded reservedIds attribute, it was rendered into DOM as .seat-pill elements; read them:
-        const pills = document.querySelectorAll('#seatsContainer .seat-pill');
-        if (pills && pills.length > 0) {
-            reserved = Array.from(pills).map(p => p.textContent.trim());
-            return;
-        }
-        // fallback: parse query params asientoIds / asientoId
-        const qp = new URLSearchParams(window.location.search);
-        const asIds = qp.get('asientoIds') || '<c:out value="${param.asientoIds}" />';
-        const asId = qp.get('asientoId') || '<c:out value="${param.asientoId}" />';
-        if (asIds && asIds.trim() !== '') {
-            reserved = asIds.split(',').map(s => s.trim()).filter(s => s !== '');
-        } else if (asId && asId.trim() !== '') {
-            reserved = [asId];
-        }
-    })();
-
-    // codigoReserva si viene del servidor
-    const codigoReserva = '<c:out value="${codigoReserva != null ? codigoReserva : ''}" />';
-
-    // mostrar fecha de emisión
-    (function setEmitido() {
-        const now = new Date();
-        const fmt = now.toLocaleString('es-PE', {year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'});
-        document.getElementById('emitido').textContent = fmt;
-    })();
-
-    // Si subtotal/comision/total NO vienen del servidor (fallback), intentamos calcular consultando precios
-    async function loadPricesIfNeeded() {
-        try {
-            const subtotalEl = document.getElementById('subtotal');
-            if (subtotalEl && subtotalEl.textContent && !subtotalEl.textContent.includes('0.00')) {
+        // reserved: prefer attribute reservedIds (forward) else params
+        let reserved = [];
+        (function initReserved() {
+            const pills = document.querySelectorAll('#seatsContainer .seat-pill');
+            if (pills && pills.length > 0) {
+                reserved = Array.from(pills).map(p => p.textContent.trim());
                 return;
             }
             const qp = new URLSearchParams(window.location.search);
-            const viajeId = qp.get('viajeId') || '<c:out value="${param.viajeId}" />';
+            const asIds = qp.get('asientoIds') || '<c:out value="${param.asientoIds}" />';
+            const asId = qp.get('asientoId') || '<c:out value="${param.asientoId}" />';
+            if (asIds && asIds.trim() !== '') {
+                reserved = asIds.split(',').map(s => s.trim()).filter(s => s !== '');
+            } else if (asId && asId.trim() !== '') {
+                reserved = [asId];
+            }
+        })();
 
-            let subtotal = 0;
-            if (viajeId && reserved.length > 0) {
-                const url = CTX + '/VerAsientosServlet?format=json&viajeId=' + encodeURIComponent(viajeId);
-                const resp = await fetch(url);
-                if (resp.ok) {
-                    const data = await resp.json();
-                    reserved.forEach(rid => {
-                        const found = data.find(s => String(s.id) === String(rid) || String(s.numero) === String(rid));
-                        if (found && found.precio) {
-                            subtotal += Number(found.precio);
-                        }
-                    });
+        // codigoReserva si viene del servidor
+        const codigoReserva = '<c:out value="${codigoReserva != null ? codigoReserva : ''}" />';
+
+        // mostrar fecha de emisión
+        (function setEmitido() {
+            const now = new Date();
+            const fmt = now.toLocaleString('es-PE', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            });
+            const emitEl = document.getElementById('emitido');
+            if (emitEl)
+                emitEl.textContent = fmt;
+        })();
+
+        // Si subtotal/comision/total NO vienen del servidor (fallback), intentamos calcular consultando precios
+        async function loadPricesIfNeeded() {
+            try {
+                const subtotalEl = document.getElementById('subtotal');
+                if (!subtotalEl)
+                    return;
+
+                // Si el subtotal ya contiene un valor distinto a 0.00, no tocar
+                if (subtotalEl.textContent && !subtotalEl.textContent.includes('0.00') && !subtotalEl.textContent.trim().endsWith('0.00')) {
+                    return;
                 }
+
+                const qp = new URLSearchParams(window.location.search);
+                const viajeId = qp.get('viajeId') || '<c:out value="${param.viajeId}" />';
+
+                let subtotal = 0;
+                if (viajeId && reserved.length > 0) {
+                    const url = CTX + '/VerAsientosServlet?format=json&viajeId=' + encodeURIComponent(viajeId);
+                    try {
+                        const resp = await fetch(url);
+                        if (resp.ok) {
+                            const data = await resp.json();
+                            reserved.forEach(rid => {
+                                const found = data.find(s => String(s.id) === String(rid) || String(s.numero) === String(rid));
+                                if (found && found.precio)
+                                    subtotal += Number(found.precio);
+                            });
+                        }
+                    } catch (e) {
+                        // no romper si falla fetch
+                        console.warn('No se pudo obtener precios via fetch', e);
+                    }
+                }
+
+                if (subtotal === 0 && reserved.length > 0) {
+                    // si no obtuvimos precios, usar fallback por asiento
+                    subtotal = reserved.length * 45.00;
+                }
+
+                const comision = Number((subtotal * 0.05).toFixed(2));
+                const total = Number((subtotal + comision).toFixed(2));
+
+                document.getElementById('subtotal').textContent = 'S/ ' + subtotal.toFixed(2);
+                document.getElementById('comision').textContent = 'S/ ' + comision.toFixed(2);
+                document.getElementById('total').textContent = 'S/ ' + total.toFixed(2);
+            } catch (e) {
+                console.error(e);
             }
+        }
 
-            if (subtotal === 0 && reserved.length > 0) {
-                subtotal = reserved.length * 45.00;
+        // --- Override visuales si vienen por params (amount/comision/total/reservaId) ---
+        (function overrideTotalsFromParams() {
+            try {
+                const qp = new URLSearchParams(window.location.search);
+                const amountParam = qp.get('amount');
+                const comisionParam = qp.get('comision');
+                const totalParam = qp.get('total');
+                const reservaIdParam = qp.get('reservaId');
+
+                if (amountParam) {
+                    const subtotalEl = document.getElementById('subtotal');
+                    if (subtotalEl)
+                        subtotalEl.textContent = 'S/ ' + parseFloat(amountParam).toFixed(2);
+                }
+                if (comisionParam) {
+                    const comEl = document.getElementById('comision');
+                    if (comEl)
+                        comEl.textContent = 'S/ ' + parseFloat(comisionParam).toFixed(2);
+                }
+                if (totalParam) {
+                    const totalEl = document.getElementById('total');
+                    if (totalEl)
+                        totalEl.textContent = 'S/ ' + parseFloat(totalParam).toFixed(2);
+                }
+
+                if (reservaIdParam) {
+                    const reservationsText = document.getElementById('reservationsText');
+                    if (reservationsText)
+                        reservationsText.textContent = reservaIdParam;
+                }
+            } catch (e) {
+                console.error('overrideTotalsFromParams error', e);
             }
-            const comision = Number((subtotal * 0.05).toFixed(2));
-            const total = Number((subtotal + comision).toFixed(2));
+        })();
 
-            document.getElementById('subtotal').textContent = 'S/ ' + subtotal.toFixed(2);
-            document.getElementById('comision').textContent = 'S/ ' + comision.toFixed(2);
-            document.getElementById('total').textContent = 'S/ ' + total.toFixed(2);
-        } catch (e) {
-            console.error(e);
-        }
-    }
+        // Botones: imprimir y exportar PDF
+        const btnPrint = document.getElementById('btnPrint');
+        if (btnPrint)
+            btnPrint.addEventListener('click', () => window.print());
 
-    // Botones
-    document.getElementById('btnPrint').addEventListener('click', () => window.print());
+        const btnPDF = document.getElementById('btnPDF');
+        if (btnPDF)
+            btnPDF.addEventListener('click', async () => {
+                const ticket = document.getElementById('ticketArea');
+                const scale = 2;
+                try {
+                    const canvas = await html2canvas(ticket, {scale: scale, useCORS: true, logging: false});
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                    const {jsPDF} = window.jspdf;
+                    const pdf = new jsPDF({unit: 'mm', format: 'a4', orientation: 'portrait'});
+                    const pageWidth = pdf.internal.pageSize.getWidth();
 
-    document.getElementById('btnPDF').addEventListener('click', async () => {
-        const ticket = document.getElementById('ticketArea');
-        const scale = 2;
-        try {
-            const canvas = await html2canvas(ticket, {scale: scale, useCORS: true, logging: false});
-            const imgData = canvas.toDataURL('image/jpeg', 0.95);
-            const {jsPDF} = window.jspdf;
-            const pdf = new jsPDF({unit: 'mm', format: 'a4', orientation: 'portrait'});
-            const pageWidth = pdf.internal.pageSize.getWidth();
+                    const imgProps = pdf.getImageProperties(imgData);
+                    const imgWidthMM = pageWidth - 20;
+                    const imgHeightMM = (imgProps.height * imgWidthMM) / imgProps.width;
 
-            const imgProps = pdf.getImageProperties(imgData);
-            const imgWidthMM = pageWidth - 20;
-            const imgHeightMM = (imgProps.height * imgWidthMM) / imgProps.width;
+                    pdf.addImage(imgData, 'JPEG', 10, 10, imgWidthMM, imgHeightMM);
 
-            pdf.addImage(imgData, 'JPEG', 10, 10, imgWidthMM, imgHeightMM);
+                    const dateStr = (new Date()).toISOString().slice(0, 10);
+                    const reservedPart = (reserved.length > 0) ? reserved.join('-') : 'NA';
+                    const filename = 'boleta_reserva_' + (codigoReserva ? codigoReserva + '_' : '') + reservedPart + '_' + dateStr + '.pdf';
+                    pdf.save(filename);
+                } catch (err) {
+                    console.error('Error generando PDF', err);
+                    alert('No se pudo generar el PDF. Usa la opción Imprimir/Guardar como PDF.');
+                }
+            });
 
-            const dateStr = (new Date()).toISOString().slice(0, 10);
-            const reservedPart = (reserved.length > 0) ? reserved.join('-') : 'NA';
-            const filename = 'boleta_reserva_' + (codigoReserva ? codigoReserva + '_' : '') + reservedPart + '_' + dateStr + '.pdf';
-            pdf.save(filename);
-        } catch (err) {
-            console.error('Error generando PDF', err);
-            alert('No se pudo generar el PDF. Usa la opción Imprimir/Guardar como PDF.');
-        }
+        // Ejecutar carga inicial de precios si es necesario
+        loadPricesIfNeeded();
     });
-
-    // Inicial
-    loadPricesIfNeeded();
 </script>
 
 <jsp:include page="../componentes/public/footer.jsp" />

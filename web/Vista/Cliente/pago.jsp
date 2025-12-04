@@ -1,4 +1,4 @@
-%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
 <!-- incluye solo header -->
@@ -7,7 +7,7 @@
 <!-- Usamos la clase page-content para respetar la altura del header (la variable se ajusta por JS al final) -->
 <div class="page-content container">
 
-    <!-- estilos espec�ficos de la p�gina de pago (m�nimos) -->
+    <!-- estilos específicos de la página de pago (mínimos) -->
     <style>
         .pay-wrap {
             max-width:980px;
@@ -65,16 +65,17 @@
         <!-- FORM -->
         <div class="card-box">
             <h2 style="color:#243a8b; margin:0 0 6px;">Pago de reserva</h2>
-            <p style="color:#6b7280; margin:0 0 14px;">Formulario de pago simulado ? no procesa transacciones reales.</p>
+            <p style="color:#6b7280; margin:0 0 14px;">Formulario de pago simulado — no procesa transacciones reales.</p>
 
             <form id="paymentForm" autocomplete="off" onsubmit="return false;">
                 <input type="hidden" id="hiddenAsientoId" name="asientoId" value="${param.asientoId}" />
                 <input type="hidden" id="hiddenViajeId" name="viajeId" value="${param.viajeId}" />
+                <input type="hidden" id="hiddenReservaId" name="reservaId" value="${param.reservaId}" />
 
                 <label style="display:block; margin-top:12px; font-weight:600;">Nombre en la tarjeta</label>
                 <input class="form-control" id="cardName" placeholder="Nombre completo" required />
 
-                <label style="display:block; margin-top:12px; font-weight:600;">N�mero de tarjeta</label>
+                <label style="display:block; margin-top:12px; font-weight:600;">Número de tarjeta</label>
                 <input class="form-control" id="cardNumber" maxlength="19" placeholder="XXXX XXXX XXXX XXXX" inputmode="numeric" required />
 
                 <div class="input-row">
@@ -94,11 +95,13 @@
                 </div>
 
                 <div style="margin-top:12px; color:#6b7280;">
-                    <strong>Monto:</strong> S/ <span id="mockAmount">45.00</span> &nbsp; ? &nbsp; Demo visual �nicamente.
+                    <strong>Monto:</strong>
+                    S/ <span id="mockAmount"><c:out value="${param.amount != null ? param.amount : '45.00'}" /></span>
+                    &nbsp; &nbsp; Demo visual únicamente.
                 </div>
             </form>
 
-            <div id="msg" style="margin-top:14px; color:#177a00; display:none; font-weight:700;">Pago simulado: aprobado ?</div>
+            <div id="msg" style="margin-top:14px; color:#177a00; display:none; font-weight:700;">Pago simulado: aprobado ✅</div>
         </div>
 
         <!-- PREVIEW -->
@@ -111,9 +114,9 @@
 
             <div style="background:#fff; border-radius:10px; padding:12px; box-shadow:0 6px 18px rgba(20,30,60,0.04);">
                 <h4 style="margin:0 0 6px 0;">Resumen</h4>
-                <p style="margin:0;">Reserva <strong>#<c:out value="${param.asientoId}" /></strong></p>
+                <p style="margin:0;">Reserva <strong>#<c:out value="${param.reservaId != null ? param.reservaId : param.asientoId}" /></strong></p>
                 <p style="margin:6px 0 0 0;">Viaje ID: <strong><c:out value="${param.viajeId}" /></strong></p>
-                <p style="margin:12px 0 0 0; font-weight:700;">Total a pagar: S/ <span id="mockAmount2">45.00</span></p>
+                <p style="margin:12px 0 0 0; font-weight:700;">Total a pagar: S/ <span id="mockAmount2"><c:out value="${param.amount != null ? param.amount : '45.00'}" /></span></p>
             </div>
         </div>
     </div>
@@ -122,7 +125,7 @@
 <!-- small script to format fields + simulate payment + adjust header spacing -->
 <script>
     (function () {
-        // Ajustador din�mico: toma la altura real del header (.navbar o header) y la guarda en la variable CSS
+        // Ajustador dinámico: toma la altura real del header (.navbar o header) y la guarda en la variable CSS
         function adjustHeaderHeight() {
             var header = document.querySelector('header') || document.querySelector('.navbar');
             var footer = document.querySelector('footer');
@@ -166,7 +169,7 @@
         payBtn.addEventListener('click', function (ev) {
             ev.preventDefault();
             if (!cardName.value.trim() || cardNumber.value.replace(/\s/g, '').length < 13 || cardExpiry.value.length < 4 || cardCvv.value.length < 3) {
-                alert('Por favor completa correctamente los datos de la tarjeta (validaci�n demo).');
+                alert('Por favor completa correctamente los datos de la tarjeta (validación demo).');
                 return;
             }
             payBtn.disabled = true;
@@ -175,12 +178,30 @@
                 msg.style.display = 'block';
                 payBtn.textContent = 'Pago realizado';
                 payBtn.style.background = '#17a34a';
+
+                // Preparar datos a enviar a la boleta
+                var ctx = '<c:out value="${pageContext.request.contextPath}" />' || '';
+                var reservaId = '<c:out value="${param.reservaId}" />';
+                var asId = '<c:out value="${param.asientoId}" />';
+                var vId = '<c:out value="${param.viajeId}" />';
+                // tomar amount mostrado en la página
+                var amountStr = document.getElementById('mockAmount').textContent.replace(',', '.').trim();
+                var amount = parseFloat(amountStr) || 0.00;
+                // calcular comisión y total (5% comisión de ejemplo)
+                var comision = parseFloat((amount * 0.05).toFixed(2));
+                var total = parseFloat((amount + comision).toFixed(2));
+
                 setTimeout(function () {
-                    // redirigir a reserva_pagada.jsp (si existe)
-                    var ctx = '<c:out value="${pageContext.request.contextPath}" />' || '';
-                    var asId = '<c:out value="${param.asientoId}" />';
-                    var vId = '<c:out value="${param.viajeId}" />';
-                    window.location.href = ctx + '/Vista/Cliente/reserva_pagada.jsp?asientoIds=' + encodeURIComponent(asId) + '&viajeId=' + encodeURIComponent(vId);
+                    // Redirigir a la página de comprobante pasando todos los parámetros
+                    var url = ctx + '/Vista/Cliente/reserva_pagada.jsp?';
+                    if (reservaId)
+                        url += 'reservaId=' + encodeURIComponent(reservaId) + '&';
+                    if (asId)
+                        url += 'asientoIds=' + encodeURIComponent(asId) + '&';
+                    if (vId)
+                        url += 'viajeId=' + encodeURIComponent(vId) + '&';
+                    url += 'amount=' + encodeURIComponent(amount.toFixed(2)) + '&comision=' + encodeURIComponent(comision.toFixed(2)) + '&total=' + encodeURIComponent(total.toFixed(2));
+                    window.location.href = url;
                 }, 800);
             }, 900);
         });

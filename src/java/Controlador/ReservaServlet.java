@@ -2,26 +2,26 @@ package Controlador;
 
 import DAO.DAOAsientoViaje;
 import DAO.DAOViaje;
+import DAO.DAOReserva;
 import Modelo.DTOViaje;
+import Modelo.DTOAsientoViaje;
 
 import javax.servlet.http.*;
 import javax.servlet.*;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * ReservaServlet
  *
- * Maneja:
- *  - GET action=init        -> mostrar resumen del viaje y cargar vista reserva_init.jsp
- *  - GET action=reserveForm -> mostrar formulario para confirmar un asiento específico
- *  - POST action=confirm    -> reservar un único asiento (usa daoAsiento.reservarAsientoAtomic(id))
- *  - POST action=reserveMultiple -> reservar múltiples asientos (intenta reservar uno a uno con reservarAsientoAtomic)
+ * Maneja: - GET action=init -> mostrar resumen del viaje y cargar vista
+ * reserva_init.jsp - GET action=reserveForm -> mostrar formulario para
+ * confirmar un asiento específico - POST action=confirm -> crear la reserva
+ * (transactional) y redirigir a pago.jsp con amount y reservaId - POST
+ * action=reserveMultiple -> reservar múltiples asientos (intenta reservar uno a
+ * uno con reservarAsientoAtomic)
  *
- * Nota: Para atomicidad real (todo o nada) implementar un método transaccional en DAO.
+ * Nota: Para atomicidad total de multi-asientos crear método transaccional en
+ * DAOReserva.
  */
 public class ReservaServlet extends HttpServlet {
 
@@ -103,30 +103,69 @@ public class ReservaServlet extends HttpServlet {
             return;
         }
 
-        // --- Reservar un único asiento (igual que tenías antes) ---
+        // --- Reservar un único asiento: ahora crea reserva transaccional y pasa amount al pago ---
         if ("confirm".equalsIgnoreCase(action)) {
             try {
                 String sAsientoId = req.getParameter("asientoId");
+                String sViajeId = req.getParameter("viajeId");
+
                 if (sAsientoId == null) {
                     req.setAttribute("error", "Falta identificar el asiento.");
                     req.getRequestDispatcher("/Vista/Cliente/reserva_form.jsp").forward(req, resp);
                     return;
                 }
+
                 int asientoId = Integer.parseInt(sAsientoId);
+                int viajeId = -1;
+                if (sViajeId != null && !sViajeId.trim().isEmpty()) {
+                    viajeId = Integer.parseInt(sViajeId);
+                }
 
-                // opcional: obtener clienteId de sesión
-                Integer clienteId = (Integer) req.getSession().getAttribute("userId");
+                // obtener clienteId desde sesión (si existe). Si no, fallback a 1 (mejor obligar login en producción)
+                Integer clienteIdObj = null;
+                HttpSession session = req.getSession(false);
+                if (session != null && session.getAttribute("userId") != null) {
+                    try {
+                        Object u = session.getAttribute("userId");
+                        if (u instanceof Integer) {
+                            clienteIdObj = (Integer) u;
+                        } else {
+                            clienteIdObj = Integer.parseInt(u.toString());
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+                int clienteId = (clienteIdObj != null) ? clienteIdObj : 1;
 
-                // Usamos el método existente reservarAsientoAtomic(idAsientoViaje)
-                boolean ok = daoAsiento.reservarAsientoAtomic(asientoId);
+                // obtener precio del asiento (si tu DAOAsientoViaje tiene este método)
+                double precio = 0.0;
+                try {
+                    DTOAsientoViaje asientoDto = daoAsiento.obtenerAsientoPorId(asientoId);
+                    if (asientoDto != null) {
+                        precio = asientoDto.getPrecio();
+                    }
+                } catch (Exception ignored) {
+                }
 
-                if (ok) {
-                    // Redirigir a página de confirmación (puedes mostrar más info en esa JSP)
-                    resp.sendRedirect(req.getContextPath() + "/Vista/Cliente/reserva_confirmada.jsp?asientoId=" + asientoId);
+                // crear la reserva transaccionalmente (DAOReserva)
+                DAOReserva daoReserva = new DAOReserva();
+                int idReserva = daoReserva.crearReserva(viajeId, asientoId, clienteId);
+
+                if (idReserva > 0) {
+                    // redirigir a pago.jsp con reservaId y amount (dos decimales en notación "US" con punto decimal)
+                    String ctx = req.getContextPath();
+                    String amountStr = String.format(java.util.Locale.US, "%.2f", precio);
+                    String redirect = ctx + "/Vista/Cliente/pago.jsp?reservaId=" + idReserva
+                            + "&asientoId=" + asientoId
+                            + "&viajeId=" + viajeId
+                            + "&amount=" + amountStr;
+                    resp.sendRedirect(redirect);
                 } else {
-                    req.setAttribute("error", "No se pudo reservar el asiento (tal vez ya fue ocupado).");
+                    // fallo al crear la reserva (asiento no disponible)
+                    req.setAttribute("error", "No se pudo crear la reserva. Es posible que el asiento ya esté ocupado.");
                     req.getRequestDispatcher("/Vista/Cliente/reserva_form.jsp").forward(req, resp);
                 }
+
             } catch (NumberFormatException nfe) {
                 nfe.printStackTrace();
                 resp.sendRedirect(req.getContextPath() + "/");
@@ -137,7 +176,7 @@ public class ReservaServlet extends HttpServlet {
             return;
         }
 
-        // --- Reservar múltiples asientos ---
+        // --- Reservar múltiples asientos (sin transacción global; mantiene tu lógica original) ---
         if ("reserveMultiple".equalsIgnoreCase(action)) {
             try {
                 // parámetros: asientoIds (repetidos) y cantidad
@@ -169,22 +208,24 @@ public class ReservaServlet extends HttpServlet {
                 Integer clienteId = (Integer) req.getSession().getAttribute("userId");
 
                 // Parsear ids
-                List<Integer> asientoIds = Arrays.stream(asientoIdParams)
+                java.util.List<Integer> asientoIds = java.util.Arrays.stream(asientoIdParams)
                         .map(String::trim)
                         .filter(s -> !s.isEmpty())
                         .map(Integer::parseInt)
-                        .collect(Collectors.toList());
+                        .collect(java.util.stream.Collectors.toList());
 
                 // Intentamos reservar uno por uno con el método atómico disponible.
-                // NOTA: si tu sistema requiere atomicidad (todo o nada), implementa un método transaccional en DAO y llámalo aquí.
-                List<Integer> reserved = new ArrayList<>();
-                List<Integer> failed = new ArrayList<>();
+                java.util.List<Integer> reserved = new java.util.ArrayList<>();
+                java.util.List<Integer> failed = new java.util.ArrayList<>();
 
                 for (Integer id : asientoIds) {
                     try {
                         boolean ok = daoAsiento.reservarAsientoAtomic(id);
-                        if (ok) reserved.add(id);
-                        else failed.add(id);
+                        if (ok) {
+                            reserved.add(id);
+                        } else {
+                            failed.add(id);
+                        }
                     } catch (Exception exInner) {
                         exInner.printStackTrace();
                         failed.add(id);
@@ -193,19 +234,16 @@ public class ReservaServlet extends HttpServlet {
 
                 if (failed.isEmpty()) {
                     // Reservas OK -> redirigir a confirmación con la lista de ids
-                    String idsParam = reserved.stream().map(String::valueOf).collect(Collectors.joining(","));
+                    String idsParam = reserved.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(","));
                     resp.sendRedirect(req.getContextPath() + "/Vista/Cliente/reserva_confirmada.jsp?asientoIds=" + idsParam + "&viajeId=" + sViaje);
                     return;
                 } else {
-                    // Algunas reservas fallaron. Devolver info al usuario.
-                    // NOTA: aquí no hacemos rollback porque solo conocemos reservarAsientoAtomic(id).
-                    // Recomendación: implementar en DAO un método transactional que haga commit/rollback.
+                    // Algunas reservas fallaron.
                     req.setAttribute("error", "No se pudieron reservar algunos asientos. IDs fallidos: " + failed);
                     req.setAttribute("reservedIds", reserved);
                     req.setAttribute("failedIds", failed);
                     req.setAttribute("cantidadSolicitada", cantidadSolicitada);
 
-                    // Volver a cargar la vista inicial (mejor sería recargar el plano y mostrar los cambios)
                     DTOViaje v = daoViaje.obtenerPorId(Integer.parseInt(sViaje));
                     req.setAttribute("viaje", v);
 
@@ -220,7 +258,6 @@ public class ReservaServlet extends HttpServlet {
                 return;
             } catch (Exception e) {
                 e.printStackTrace();
-                // En caso de error grave, redirigir a la raíz o mostrar página de error
                 resp.sendRedirect(req.getContextPath() + "/");
                 return;
             }
